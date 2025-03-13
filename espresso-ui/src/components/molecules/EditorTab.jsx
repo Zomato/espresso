@@ -5,7 +5,6 @@ import {
 import { cn } from "@/utils/index";
 import { useRef, useState } from "react";
 import useOnClickOutside from "@/hooks/useOnClickOutside";
-import { useForm } from "react-hook-form";
 
 const field = {
   id: "template_name",
@@ -23,7 +22,7 @@ const EditorTab = ({
   editorType,
   editorProps,
 }) => {
-  const { register } = formControls
+  const { register } = formControls;
 
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [readOnlyEditorType, setReadOnlyEditorType] = useState(
@@ -46,11 +45,13 @@ const EditorTab = ({
     <div className="absolute right-2 top-2 flex text-sm w-[90%]">
       <div className="flex w-full justify-between">
         <input
+          autoFocus
           id={field.id}
           type="text"
           {...register(field.id, { required: field.rules?.required })}
           defaultValue={field.defaultValue || ""}
           placeholder={`Enter ${field.label.toLowerCase()}`}
+          className="px-1 border-2 border-black rounded-md focus:outline-none"
         />
         <div className="flex border border-black rounded-md">
           <div

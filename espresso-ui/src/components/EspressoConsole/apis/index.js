@@ -3,9 +3,6 @@ import axios from 'axios';
 const BASE_URL = 'http://localhost:8081'; // Adjust this based on your API base URL
 const STATUS_FAILED = 'failed'; // Assuming this constant exists elsewhere in your code
 
-// http.HandleFunc("/generate-pdf-stream", handlers.GeneratePdfStream)
-
-
 export const getTemplateListing = async () => {
     try {
         const axiosResponse = await axios.get(`${BASE_URL}/list-templates`);
@@ -16,7 +13,7 @@ export const getTemplateListing = async () => {
         return res;
     } catch (e) {
         if (axios.isAxiosError(e)) {
-            throw new Error(e.response?.data?.message || e.message || 'API request failed');
+            throw new Error(e.response?.data?.status?.message || e.message || 'API request failed');
         }
         throw new Error(e?.message || 'Failed to get template list');
     }
@@ -34,7 +31,7 @@ export const getTemplateHtmlAndJson = async id => {
         return res;
     } catch (e) {
         if (axios.isAxiosError(e)) {
-            throw new Error(e.response?.data?.message || e.message || 'API request failed');
+            throw new Error(e.response?.data?.status?.message || e.message || 'API request failed');
         }
         throw new Error(e?.message || 'Failed to get template HTML and JSON');
     }
@@ -62,7 +59,7 @@ export const createPdfTemplate = async requestBody => {
         return resp;
     } catch (e) {
         if (axios.isAxiosError(e)) {
-            throw new Error(e.response?.data?.message || e.message || 'API request failed');
+            throw new Error(e.response?.data?.status?.message || e.message || 'API request failed');
         }
         throw new Error(e?.message || 'Failed to create PDF template');
     }
@@ -91,7 +88,7 @@ export const generatePdfReq = async requestBody => {
                     throw new Error('Failed to generate PDF', jsonErr);
                 }
             } else {
-                throw new Error(e.response?.data?.message || e.message || 'API request failed');
+                throw new Error(e.response?.data?.status?.message || e.message || 'API request failed');
             }
         }
         throw new Error(e?.message || 'Failed to generate PDF');
