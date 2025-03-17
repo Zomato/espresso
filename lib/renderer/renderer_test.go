@@ -6,9 +6,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/Zomato/espresso/lib/pkg/browser_manager"
-	"github.com/Zomato/espresso/lib/pkg/templatestore"
-	"github.com/Zomato/espresso/lib/pkg/workerpool"
+	"github.com/Zomato/espresso/lib/browser_manager"
+	"github.com/Zomato/espresso/lib/templatestore"
+	"github.com/Zomato/espresso/lib/workerpool"
 	"github.com/go-rod/rod/lib/proto"
 	"github.com/stretchr/testify/assert"
 )

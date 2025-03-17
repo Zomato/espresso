@@ -1,8 +1,8 @@
 package renderer
 
 import (
-	"github.com/Zomato/espresso/lib/pkg/browser_manager"
-	"github.com/Zomato/espresso/lib/pkg/templatestore"
+	"github.com/Zomato/espresso/lib/browser_manager"
+	"github.com/Zomato/espresso/lib/templatestore"
 	"github.com/go-rod/rod/lib/proto"
 )
 

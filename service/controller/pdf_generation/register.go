@@ -6,8 +6,8 @@ import (
 	"net/http"
 	"os"
 
-	"github.com/Zomato/espresso/lib/pkg/s3"
-	"github.com/Zomato/espresso/lib/pkg/templatestore"
+	"github.com/Zomato/espresso/lib/s3"
+	"github.com/Zomato/espresso/lib/templatestore"
 	"github.com/spf13/viper"
 )
 

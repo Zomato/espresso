@@ -7,9 +7,9 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/Zomato/espresso/lib/pkg/browser_manager"
+	"github.com/Zomato/espresso/lib/browser_manager"
 
-	"github.com/Zomato/espresso/lib/pkg/workerpool"
+	"github.com/Zomato/espresso/lib/workerpool"
 	"github.com/Zomato/espresso/service/controller/pdf_generation"
 	"github.com/Zomato/espresso/service/internal/pkg/viperpkg"
 	"github.com/spf13/viper"

@@ -6,7 +6,7 @@ import (
 	"io"
 	"text/template"
 
-	"github.com/Zomato/espresso/lib/pkg/s3"
+	"github.com/Zomato/espresso/lib/s3"
 )
 
 const (

@@ -8,9 +8,99 @@ Espresso library is a high-performance library for generating PDFs from HTML tem
 go get github.com/Zomato/espresso/lib
 ```
 
+## Dependencies Setup
+
+Here's an example dockerfile to set up all required dependencies:
+
+```dockerfile
+FROM --platform=$BUILDPLATFORM golang:1.22.4-bullseye
+
+WORKDIR /app/example/
+
+
+
+# Configure
+ENV GO111MODULE=on \
+    ROD_BROWSER_BIN=/usr/bin/chromium
+
+# Install browser dependencies, Chromium, and netcat
+RUN apt-get update && apt-get install -y \
+    fonts-liberation \
+    libappindicator3-1 \
+    libasound2 \
+    libatk-bridge2.0-0 \
+    libatk1.0-0 \
+    libcups2 \
+    libnss3 \
+    libxcomposite1 \
+    libxdamage1 \
+    libxrandr2 \
+    libdrm2 \
+    libgbm1 \
+    libxshmfence1 \
+    libx11-xcb1 \
+    chromium \
+    netcat \
+    --no-install-recommends \
+    && rm -rf /var/lib/apt/lists/*
+
+# Add a non-root user for running Chrome with sandbox
+RUN groupadd -r chrome && useradd -r -g chrome -G audio,video chrome \
+    && mkdir -p /home/chrome/Downloads \
+    && chown -R chrome:chrome /home/chrome \
+    && chown -R chrome:chrome /app/example
+
+
+# Set proper permissions
+RUN chown -R chrome:chrome /app
+
+# Set the user to chrome for the container
+USER chrome
+
+EXPOSE 8081
+
+# Change the CMD as per your code
+CMD ["go", "run","-mod=mod", "/app/example/main.go"]
+
+```
+
 ## Basic Usage
 
-### 1. PDF Generation
+### 1. Initialize Browser and Worker Pool for PDF generation
+
+First, initialize the browser manager and worker pool. This is required before generating any PDFs:
+
+```go
+package main
+
+import (
+    "context"
+    "log"
+    "time"
+    "github.com/Zomato/espresso/lib/browser_manager"
+    "github.com/Zomato/espresso/lib/workerpool"
+)
+
+func main() {
+    ctx := context.Background()
+    
+    // Initialize browser manager
+    tabPoolSize := 5 // number of concurrent browser tabs
+    if err := browser_manager.Init(ctx, tabPoolSize); err != nil {
+        log.Fatalf("Failed to initialize browser: %v", err)
+    }
+
+    // Initialize worker pool
+    workerCount := 10 // number of concurrent workers
+    workerTimeout := 200 // timeout in milliseconds
+    workerpool.Initialize(
+        workerCount,
+        time.Duration(workerTimeout) * time.Millisecond,
+    )
+}
+```
+
+### 2. PDF Generation
 
 Here's a basic example of generating a PDF from HTML:
 
@@ -19,14 +109,15 @@ package main
 
 import (
     "context"
-    "github.com/Zomato/espresso/lib/pkg/renderer"
-    "github.com/Zomato/espresso/lib/pkg/browser_manager"
+    "github.com/Zomato/espresso/lib/renderer"
+    "github.com/Zomato/espresso/lib/browser_manager"
     "github.com/go-rod/rod/lib/proto"
 )
 
 func main() {
     ctx := context.Background()
-    
+    // initialize browser and workerpool here
+
     // Configure viewport (optional)
     viewport := &browser_manager.ViewportConfig{
         Width: 794,             // A4 width
@@ -34,7 +125,6 @@ func main() {
         DeviceScaleFactor: 1.0,
         IsMobile: false,
     }
-
     // Configure PDF settings
     pdfSettings := &proto.PagePrintToPDF{
         Landscape: false,
@@ -90,7 +180,7 @@ func float64Ptr(v float64) *float64 {
 ```
 Note- If using any of the s3, mysql, disk storage adapters, make sure to init and pass the adapters as a parameter in GetHtmlPdf [See configuration example](#L147)
 
-### 2. PDF Signing (Basic)
+### 3. PDF Signing (Basic)
 
 ```go
 package main
@@ -98,7 +188,7 @@ package main
 import (
     "context"
     "io"
-    "github.com/Zomato/espresso/lib/pkg/signer"
+    "github.com/Zomato/espresso/lib/signer"
 )
 
 func main() {
@@ -108,7 +198,8 @@ func main() {
     pdfStream := getPDFStream() // io.Reader
     
     // Your certificate and private key
-    cert, privateKey := loadCertificateAndKey()
+    // var cert *x509.Certificate
+    // var privateKey crypto.Signer
     
     // Sign PDF
     signedPDF, err := signer.SignPdfStream(ctx, pdfStream, cert, privateKey)
@@ -162,9 +253,6 @@ pdf, err := renderer.GetHtmlPdf(ctx, input, nil) // Note: nil adapter
 
 ### 2. Disk Storage
 ```go
-// Configure in your config file or environment:
-// template_storage:
-//   storage_type: "disk"
 
 diskAdapter, err := templatestore.TemplateStorageAdapterFactory(templatestore.TemplateStorageConfig{
     StorageType: "disk",
@@ -180,6 +268,7 @@ pdf, err := renderer.GetHtmlPdf(ctx, input, &diskAdapter)
 ```
 
 ### 3. S3 Storage
+Note: You can use your own implementation to replace the spf13/viper package
 ```go
 // Required config:
 // s3:
@@ -309,8 +398,8 @@ The project has a comprehensive test suite covering both unit tests for the lib 
 ### Test Structure
 
 1. **lib Unit Tests**
-   - `lib/pkg/renderer/renderer_test.go`: Tests HTML to PDF conversion with various templates and configurations
-   - `lib/pkg/signer/signer_test.go`: Tests PDF digital signing with test certificates
+   - `lib/renderer/renderer_test.go`: Tests HTML to PDF conversion with various templates and configurations
+   - `lib/signer/signer_test.go`: Tests PDF digital signing with test certificates
 
 2. **Service Integration Tests**
    - `service/integration_test.go`: End-to-end API tests covering PDF generation and template management endpoints

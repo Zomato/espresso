@@ -8,12 +8,12 @@ import (
 	"sync"
 	"time"
 
-	"github.com/Zomato/espresso/lib/pkg/browser_manager"
-	"github.com/Zomato/espresso/lib/pkg/certmanager"
-	"github.com/Zomato/espresso/lib/pkg/renderer"
-	"github.com/Zomato/espresso/lib/pkg/signer"
-	"github.com/Zomato/espresso/lib/pkg/templatestore"
-	"github.com/Zomato/espresso/lib/pkg/workerpool"
+	"github.com/Zomato/espresso/lib/browser_manager"
+	"github.com/Zomato/espresso/lib/certmanager"
+	"github.com/Zomato/espresso/lib/renderer"
+	"github.com/Zomato/espresso/lib/signer"
+	"github.com/Zomato/espresso/lib/templatestore"
+	"github.com/Zomato/espresso/lib/workerpool"
 	"github.com/spf13/viper"
 
 	"github.com/go-rod/rod/lib/proto"
@@ -117,7 +117,6 @@ func GeneratePDF(ctx context.Context, req *PDFDto, templateStoreAdapter *templat
 		FilePath:   req.OutputTemplatePath,
 		FileS3Path: req.OutputTemplatePath,
 	}
-
 	// Upload the streaming data
 	resp, err := (*fileStoreAdapter).PutDocument(ctx, docReq, &pdfReader)
 	if err != nil {
