@@ -7,7 +7,7 @@ import (
 
 var (
 	once   sync.Once
-	logger ILogger
+	Logger ILogger
 )
 
 type Level uint8
@@ -31,8 +31,8 @@ func init() {
 
 	once.Do(func() {
 		zeroLog := newZeroLog()
-		logger = zeroLog
+		Logger = zeroLog
 
-		logger.Info(context.Background(), "Logger: ZeroLog initialized")
+		Logger.Info(context.Background(), "Logger: ZeroLog initialized")
 	})
 }

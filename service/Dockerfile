@@ -19,6 +19,8 @@ ENV GOSUMDB=off \
 # Copy go.mod and go.sum first to leverage Docker cache
 COPY service/go.mod service/go.sum ./service/
 
+COPY lib /app/espresso/lib/
+
 # Download dependencies
 RUN cd service && \
     go mod download
@@ -62,6 +64,10 @@ RUN chown -R chrome:chrome /app
 
 # Set the user to chrome for the container
 USER chrome
+
+# To download dependencies as non root user
+ENV GOPATH=/home/chrome/go
+RUN mkdir -p $GOPATH/pkg/mod && chmod -R 777 $GOPATH/pkg/mod
 
 EXPOSE 8081
 
