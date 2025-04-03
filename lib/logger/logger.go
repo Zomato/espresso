@@ -26,7 +26,7 @@ type ILogger interface {
 	Debug(ctx context.Context, msg string)
 }
 
-func InitLogger() {
+func init() {
 	// Choose which logger to use.
 
 	once.Do(func() {

@@ -1,13 +1,17 @@
 module github.com/Zomato/espresso/service
 
-go 1.22.4
+go 1.23.0
+
+toolchain go1.23.1
 
 require (
-	github.com/Zomato/espresso/lib v0.0.0-20250316142812-954ffe9efdb5
+	github.com/Zomato/espresso/lib v0.0.0-20250321161824-082e62c67636
 	github.com/go-rod/rod v0.116.2
 	github.com/spf13/viper v1.19.0
 	github.com/stretchr/testify v1.10.0
 )
+
+replace github.com/Zomato/espresso/lib => ../lib
 
 require (
 	github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc // indirect
@@ -64,7 +68,7 @@ require (
 	golang.org/x/crypto v0.33.0 // indirect
 	golang.org/x/exp v0.0.0-20230905200255-921286631fa9 // indirect
 	golang.org/x/sync v0.11.0 // indirect
-	golang.org/x/sys v0.30.0 // indirect
+	golang.org/x/sys v0.31.0 // indirect
 	golang.org/x/text v0.22.0 // indirect
 	gopkg.in/ini.v1 v1.67.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
