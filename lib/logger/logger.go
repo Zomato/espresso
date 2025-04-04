@@ -7,7 +7,7 @@ import (
 
 var (
 	once   sync.Once
-	Logger ILogger
+	Logger ILogger = newNoOpLogger()
 )
 
 type Level uint8
@@ -19,11 +19,13 @@ const (
 	Error
 )
 
+type Fields map[string]any
+
 type ILogger interface {
-	Info(ctx context.Context, msg string)
-	Warn(ctx context.Context, msg string)
-	Error(ctx context.Context, msg string, err error)
-	Debug(ctx context.Context, msg string)
+	Info(ctx context.Context, msg string, fields Fields)
+	Warn(ctx context.Context, msg string, fields Fields)
+	Error(ctx context.Context, msg string, err error, fields Fields)
+	Debug(ctx context.Context, msg string, fields Fields)
 }
 
 func init() {
@@ -33,6 +35,6 @@ func init() {
 		zeroLog := newZeroLog()
 		Logger = zeroLog
 
-		Logger.Info(context.Background(), "Logger: ZeroLog initialized")
+		Logger.Info(context.Background(), "Logger: ZeroLog initialized", nil)
 	})
 }

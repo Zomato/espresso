@@ -22,18 +22,26 @@ func newZeroLog() ZeroLog {
 	}
 }
 
-func (l ZeroLog) Info(ctx context.Context, msg string) {
-	l.logger.Info().Msg(msg)
+func addFields(event *zerolog.Event, fields map[string]any) *zerolog.Event {
+	for k, v := range fields {
+		event.Interface(k, v)
+	}
+
+	return event
 }
 
-func (l ZeroLog) Warn(ctx context.Context, msg string) {
-	l.logger.Warn().Msg(msg)
+func (l ZeroLog) Info(ctx context.Context, msg string, fields Fields) {
+	addFields(l.logger.Info(), fields).Msg(msg)
 }
 
-func (l ZeroLog) Error(ctx context.Context, msg string, err error) {
-	l.logger.Err(err).Msg(msg)
+func (l ZeroLog) Warn(ctx context.Context, msg string, fields Fields) {
+	addFields(l.logger.Warn(), fields).Msg(msg)
 }
 
-func (l ZeroLog) Debug(ctx context.Context, msg string) {
-	l.logger.Debug().Msg(msg)
+func (l ZeroLog) Error(ctx context.Context, msg string, err error, fields Fields) {
+	addFields(l.logger.Err(err), fields).Msg(msg)
+}
+
+func (l ZeroLog) Debug(ctx context.Context, msg string, fields Fields) {
+	addFields(l.logger.Debug(), fields).Msg(msg)
 }
