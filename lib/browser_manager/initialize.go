@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 
+	log "github.com/Zomato/espresso/lib/logger"
 	"github.com/go-rod/rod"
 	"github.com/go-rod/rod/lib/launcher"
 )
@@ -14,10 +15,13 @@ var (
 )
 
 func Init(ctx context.Context, tabPool int) error {
-	fmt.Println("Initializing browser...")
+	log.Logger.Info(ctx, "Initializing Browser...", nil)
+
 	browserPath := os.Getenv("ROD_BROWSER_BIN")
 	if browserPath == "" {
-		return fmt.Errorf("ROD_BROWSER_BIN environment variable not set")
+		err := fmt.Errorf("ROD_BROWSER_BIN environment variable not set")
+		log.Logger.Error(ctx, "ENV Missing", err, nil)
+		return err
 	}
 
 	launcher := launcher.New().Bin(browserPath).
@@ -72,17 +76,21 @@ func Init(ctx context.Context, tabPool int) error {
 
 	url, err := launcher.Launch()
 	if err != nil {
-		return fmt.Errorf("failed to launch browser: %v", err)
+		err := fmt.Errorf("failed to launch browser: %v", err)
+		log.Logger.Error(ctx, "", err, nil)
+		return err
 	}
 	fmt.Printf("Browser launched at URL: %s\n", url)
 
 	browser := rod.New().ControlURL(url)
 	if err := browser.Connect(); err != nil {
-		return fmt.Errorf("failed to connect to browser: %v", err)
+		err := fmt.Errorf("failed to connect to browser: %v", err)
+		log.Logger.Error(ctx, "", err, nil)
+		return err
 	}
 	Browser = browser
 
-	fmt.Println("Browser connected successfully")
+	log.Logger.Info(ctx, "Browser Connected Successfully", nil)
 
 	InitializeTabManager(ctx, tabPool)
 

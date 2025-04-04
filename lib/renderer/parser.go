@@ -7,6 +7,8 @@ import (
 	"strings"
 	"sync"
 	"text/template"
+
+	log "github.com/Zomato/espresso/lib/logger"
 )
 
 var bufferPool = sync.Pool{
@@ -19,6 +21,7 @@ func ExecuteTemplate(ctx context.Context, templateFile *template.Template, data 
 
 	// Validate template and data
 	if templateFile == nil {
+		log.Logger.Error(ctx, "template file is nil", nil, nil)
 		return "", fmt.Errorf("template file is nil")
 	}
 
@@ -29,6 +32,7 @@ func ExecuteTemplate(ctx context.Context, templateFile *template.Template, data 
 
 	// Execute template with buffered writer
 	if err := templateFile.Execute(buf, data); err != nil {
+		log.Logger.Error(ctx, "failed to execute template", err, nil)
 		return "", fmt.Errorf("failed to execute template: %w", err)
 	}
 

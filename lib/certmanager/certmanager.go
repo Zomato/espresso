@@ -11,6 +11,8 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+
+	log "github.com/Zomato/espresso/lib/logger"
 )
 
 // SigningCredentials holds the certificate and private key for PDF signing
@@ -29,11 +31,13 @@ func LoadSigningCredentials(ctx context.Context, certConfig *CertificateConfig) 
 
 	cert, err := getCertificate(certConfig.CertFilePath)
 	if err != nil {
+		log.Logger.Error(ctx, "failed to get certificate", err, nil)
 		return nil, fmt.Errorf("failed to get certificate: %v", err)
 	}
 
 	privateKey, err := getKey(certConfig.KeyFilePath, certConfig.KeyPassword)
 	if err != nil {
+		log.Logger.Error(ctx, "failed to get certificate", err, nil)
 		return nil, fmt.Errorf("failed to get private key: %v", err)
 	}
 
@@ -44,33 +48,40 @@ func LoadSigningCredentials(ctx context.Context, certConfig *CertificateConfig) 
 }
 
 func getCertificate(certPath string) (*x509.Certificate, error) {
+	ctx := context.Background()
 
 	certBytes, err := os.ReadFile(certPath)
 	if err != nil {
+		log.Logger.Error(ctx, "failed to read certificate file", err, nil)
 		return nil, fmt.Errorf("failed to read certificate file: %v", err)
 	}
 
 	certBlock, _ := pem.Decode(certBytes)
 	if certBlock == nil {
+		log.Logger.Error(ctx, "failed to decode certificate PEN", nil, nil)
 		return nil, fmt.Errorf("failed to decode certificate PEM")
 	}
 
 	cert, err := x509.ParseCertificate(certBlock.Bytes)
 	if err != nil {
+		log.Logger.Error(ctx, "failed to parse certificate", err, nil)
 		return nil, fmt.Errorf("failed to parse certificate: %v", err)
 	}
 	return cert, nil
 }
 
 func getKey(keyPath, password string) (crypto.Signer, error) {
+	ctx := context.Background()
 
 	keyBytes, err := os.ReadFile(keyPath)
 	if err != nil {
+		log.Logger.Error(ctx, "failed to read private key file", err, nil)
 		return nil, fmt.Errorf("failed to read private key file: %v", err)
 	}
 
 	privateKey, err := loadPrivateKey(keyBytes, password)
 	if err != nil {
+		log.Logger.Error(ctx, "failed to load private key", err, nil)
 		return nil, fmt.Errorf("failed to load private key: %v", err)
 	}
 
@@ -78,8 +89,11 @@ func getKey(keyPath, password string) (crypto.Signer, error) {
 }
 
 func loadPrivateKey(keyBytes []byte, password string) (crypto.Signer, error) {
+	ctx := context.Background()
+
 	block, _ := pem.Decode(keyBytes)
 	if block == nil {
+		log.Logger.Error(ctx, "failed to decode PEM block", nil, nil)
 		return nil, fmt.Errorf("failed to decode PEM block")
 	}
 
@@ -87,6 +101,7 @@ func loadPrivateKey(keyBytes []byte, password string) (crypto.Signer, error) {
 		// For PKCS#8 encrypted keys
 		key, err := parseEncryptedPKCS8PrivateKey(block.Bytes, []byte(password))
 		if err != nil {
+			log.Logger.Error(ctx, "failed to parse encrypted PKCS#8 private key", err, nil)
 			return nil, fmt.Errorf("failed to parse encrypted PKCS#8 private key: %w", err)
 		}
 
@@ -96,12 +111,14 @@ func loadPrivateKey(keyBytes []byte, password string) (crypto.Signer, error) {
 		case *ecdsa.PrivateKey:
 			return k, nil
 		default:
+			log.Logger.Error(ctx, "unsupported private key type", nil, nil)
 			return nil, fmt.Errorf("unsupported private key type")
 		}
 	} else if block.Type == "PRIVATE KEY" {
 		// For unencrypted PKCS#8 keys
 		key, err := x509.ParsePKCS8PrivateKey(block.Bytes)
 		if err != nil {
+			log.Logger.Error(ctx, "failed to parse PKCS#8 private key", err, nil)
 			return nil, fmt.Errorf("failed to parse PKCS#8 private key: %w", err)
 		}
 
@@ -111,15 +128,18 @@ func loadPrivateKey(keyBytes []byte, password string) (crypto.Signer, error) {
 		case *ecdsa.PrivateKey:
 			return k, nil
 		default:
+			log.Logger.Error(ctx, "unsupported private key type", nil, nil)
 			return nil, fmt.Errorf("unsupported private key type")
 		}
 	} else {
+		log.Logger.Error(ctx, "unsupported private key format", nil, map[string]any{"key_type": block.Type})
 		return nil, fmt.Errorf("unsupported private key format: %s", block.Type)
 	}
 }
 
 // Helper function to parse PKCS#8 encrypted private keys
 func parseEncryptedPKCS8PrivateKey(data, password []byte) (interface{}, error) {
+	ctx := context.Background()
 	var privKey interface{}
 
 	// First try direct parsing (for some implementations)
@@ -157,6 +177,7 @@ func parseEncryptedPKCS8PrivateKey(data, password []byte) (interface{}, error) {
 	cmd.Stderr = &stderr
 
 	if err := cmd.Run(); err != nil {
+		log.Logger.Error(ctx, "OpenSSL error", err, nil)
 		return nil, fmt.Errorf("OpenSSL error: %v, %s", err, stderr.String())
 	}
 
@@ -168,6 +189,7 @@ func parseEncryptedPKCS8PrivateKey(data, password []byte) (interface{}, error) {
 
 	decryptedBlock, _ := pem.Decode(decryptedData)
 	if decryptedBlock == nil {
+		log.Logger.Error(ctx, "failed to decode decrypted PEM block", nil, nil)
 		return nil, fmt.Errorf("failed to decode decrypted PEM block")
 	}
 

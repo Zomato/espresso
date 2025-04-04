@@ -8,22 +8,31 @@ import (
 	"net/http"
 	"strconv"
 
+	cContext "context"
+
+	log "github.com/Zomato/espresso/lib/logger"
 	"github.com/digitorus/timestamp"
 )
 
 func (context *SignContext) GetTSA(sign_content []byte) (timestamp_response []byte, err error) {
+	ctx := cContext.Background()
+
 	sign_reader := bytes.NewReader(sign_content)
 	ts_request, err := timestamp.CreateRequest(sign_reader, &timestamp.RequestOptions{
 		Hash:         context.SignData.DigestAlgorithm,
 		Certificates: true,
 	})
 	if err != nil {
+		log.Logger.Error(ctx, "failed to create request", err, nil)
 		return nil, fmt.Errorf("failed to create request: %w", err)
 	}
 
 	ts_request_reader := bytes.NewReader(ts_request)
 	req, err := http.NewRequest("POST", context.SignData.TSA.URL, ts_request_reader)
 	if err != nil {
+		log.Logger.Error(ctx, "failed to prepare request", err, map[string]any{
+			"url": context.SignData.TSA.URL,
+		})
 		return nil, fmt.Errorf("failed to prepare request (%s): %w", context.SignData.TSA.URL, err)
 	}
 
@@ -47,6 +56,7 @@ func (context *SignContext) GetTSA(sign_content []byte) (timestamp_response []by
 			defer resp.Body.Close()
 			body, err := io.ReadAll(resp.Body)
 			if err != nil {
+				log.Logger.Error(ctx, "failed to read non success response", err, nil)
 				return nil, fmt.Errorf("failed to read non success response: %w", err)
 			}
 			return nil, errors.New("non success response (" + strconv.Itoa(code) + "): " + string(body))
@@ -58,6 +68,7 @@ func (context *SignContext) GetTSA(sign_content []byte) (timestamp_response []by
 	defer resp.Body.Close()
 	timestamp_response_body, err := io.ReadAll(resp.Body)
 	if err != nil {
+		log.Logger.Error(ctx, "failed to read response", err, nil)
 		return nil, fmt.Errorf("failed to read response: %w", err)
 	}
 

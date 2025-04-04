@@ -6,6 +6,7 @@ import (
 	"io"
 	"text/template"
 
+	log "github.com/Zomato/espresso/lib/logger"
 	"github.com/Zomato/espresso/lib/s3"
 )
 
@@ -23,6 +24,7 @@ func NewS3StorageAdapter(ctx context.Context, options ...func(*s3.Config)) (*S3T
 
 func (s *S3TemplateStorage) GetTemplate(ctx context.Context, req *GetTemplateRequest) (*template.Template, error) {
 	if req.TemplateS3Path == "" {
+		log.Logger.Error(ctx, "template path is required for S3 storage", nil, nil)
 		return nil, fmt.Errorf("template path is required for S3 storage")
 	}
 	reader, err := s.client.GetFileReader(ctx, req.TemplateS3Path)
@@ -38,11 +40,13 @@ func (s *S3TemplateStorage) GetTemplate(ctx context.Context, req *GetTemplateReq
 
 func (s *S3TemplateStorage) PutDocument(ctx context.Context, req *PostDocumentRequest, reader *io.Reader) (string, error) {
 	if req.FileS3Path == "" {
+		log.Logger.Error(ctx, "file S3 path is required for S3 storage", nil, nil)
 		return "", fmt.Errorf("file S3 path is required for S3 storage")
 	}
 	// Upload the file to S3
 	_, err := s.client.UploadFile(ctx, req.FileS3Path, *reader)
 	if err != nil {
+		log.Logger.Error(ctx, "failed to upload file to S3", nil, nil)
 		return "", fmt.Errorf("failed to upload file to S3: %v", err)
 	}
 
@@ -50,6 +54,7 @@ func (s *S3TemplateStorage) PutDocument(ctx context.Context, req *PostDocumentRe
 }
 func (s *S3TemplateStorage) GetDocument(ctx context.Context, req *GetDocumentRequest) (io.Reader, error) {
 	if req.FileS3Path == "" {
+		log.Logger.Error(ctx, "file S3 path is required for S3", nil, nil)
 		return nil, fmt.Errorf("file S3 path is required for S3 storage")
 	}
 	return s.client.GetFileReader(ctx, req.FileS3Path)
