@@ -1,3 +1,7 @@
+/*
+	Default no operation logger for no overhead. It is assigned default to ILogger instance in logger.go file.
+*/
+
 package log
 
 import (

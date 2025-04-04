@@ -6,7 +6,9 @@ import (
 )
 
 var (
-	once   sync.Once
+	once sync.Once
+
+	// Assigning default no-op logger. Later it will be replaced by actual logger(if provided) inside init function.
 	Logger ILogger = newNoOpLogger()
 )
 
@@ -29,7 +31,7 @@ type ILogger interface {
 }
 
 func init() {
-	// Choose which logger to use.
+	// Replace with ILogger implementation to use logger of your choice.
 
 	once.Do(func() {
 		zeroLog := newZeroLog()
