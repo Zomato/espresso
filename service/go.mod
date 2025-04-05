@@ -12,9 +12,6 @@ require (
 	github.com/stretchr/testify v1.10.0
 )
 
-// replace github.com/Zomato/espresso/lib => github.com/x-sushant-x/espresso/lib v0.0.0-b0f8f60eedca0a2a68e8a223fb5db24471fa25e0
-replace github.com/Zomato/espresso/lib => ../lib
-
 require (
 	github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc // indirect
 	github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2 // indirect
