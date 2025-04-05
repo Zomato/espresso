@@ -157,7 +157,6 @@ func (context *SignContext) createTimestampPlaceholder() []byte {
 }
 
 func (context *SignContext) createSignature() ([]byte, error) {
-	ctx := cContext.Background()
 
 	if _, err := context.OutputBuffer.Seek(0, 0); err != nil {
 		return nil, err
@@ -173,13 +172,11 @@ func (context *SignContext) createSignature() ([]byte, error) {
 
 		timestamp_response, err := context.GetTSA(sign_content)
 		if err != nil {
-			log.Logger.Error(ctx, "get timestamp", err, nil)
 			return nil, fmt.Errorf("get timestamp: %w", err)
 		}
 
 		ts, err := timestamp.ParseResponse(timestamp_response)
 		if err != nil {
-			log.Logger.Error(ctx, "parse timestamp", err, nil)
 			return nil, fmt.Errorf("parse timestamp: %w", err)
 		}
 
@@ -188,14 +185,12 @@ func (context *SignContext) createSignature() ([]byte, error) {
 
 	signed_data, err := pkcs7.NewSignedData(sign_content)
 	if err != nil {
-		log.Logger.Error(ctx, "new signed data", err, nil)
 		return nil, fmt.Errorf("new signed data: %w", err)
 	}
 
 	signed_data.SetDigestAlgorithm(getOIDFromHashAlgorithm(context.SignData.DigestAlgorithm))
 	signingCertificate, err := context.createSigningCertificateAttribute()
 	if err != nil {
-		log.Logger.Error(ctx, "new signed data", err, nil)
 		return nil, fmt.Errorf("new signed data: %w", err)
 	}
 
@@ -215,7 +210,6 @@ func (context *SignContext) createSignature() ([]byte, error) {
 	}
 
 	if err := signed_data.AddSignerChain(context.SignData.Certificate, context.SignData.Signer, certificate_chain, signer_config); err != nil {
-		log.Logger.Error(ctx, "added signer chain", err, nil)
 		return nil, fmt.Errorf("add signer chain: %w", err)
 	}
 
@@ -226,19 +220,16 @@ func (context *SignContext) createSignature() ([]byte, error) {
 
 		timestamp_response, err := context.GetTSA(signature_data.SignerInfos[0].EncryptedDigest)
 		if err != nil {
-			log.Logger.Error(ctx, "get timestamp", err, nil)
 			return nil, fmt.Errorf("get timestamp: %w", err)
 		}
 
 		ts, err := timestamp.ParseResponse(timestamp_response)
 		if err != nil {
-			log.Logger.Error(ctx, "parse timestamp", err, nil)
 			return nil, fmt.Errorf("parse timestamp: %w", err)
 		}
 
 		_, err = pkcs7.Parse(ts.RawToken)
 		if err != nil {
-			log.Logger.Error(ctx, "parse timestamp token", err, nil)
 			return nil, fmt.Errorf("parse timestamp token: %w", err)
 		}
 
@@ -288,7 +279,6 @@ func (context *SignContext) createSigningCertificateAttribute() (*pkcs7.Attribut
 }
 
 func (context *SignContext) updateByteRange() error {
-	ctx := cContext.Background()
 
 	if _, err := context.OutputBuffer.Seek(0, 0); err != nil {
 		return err
@@ -297,7 +287,6 @@ func (context *SignContext) updateByteRange() error {
 	contentsPlaceholder := bytes.Repeat([]byte("0"), int(context.SignatureMaxLength))
 	contentsIndex := bytes.Index(context.OutputBuffer.Buff.Bytes(), contentsPlaceholder)
 	if contentsIndex == -1 {
-		log.Logger.Error(ctx, "failed to find contents placeholder", nil, nil)
 		return fmt.Errorf("failed to find contents placeholder")
 	}
 
@@ -315,13 +304,11 @@ func (context *SignContext) updateByteRange() error {
 	if len(new_byte_range) < len(signatureByteRangePlaceholder) {
 		new_byte_range += strings.Repeat(" ", len(signatureByteRangePlaceholder)-len(new_byte_range))
 	} else if len(new_byte_range) != len(signatureByteRangePlaceholder) {
-		log.Logger.Error(ctx, "new byte range string is the same length as the placeholder", nil, nil)
 		return fmt.Errorf("new byte range string is the same lenght as the placeholder")
 	}
 
 	placeholderIndex := bytes.Index(context.OutputBuffer.Buff.Bytes(), []byte(signatureByteRangePlaceholder))
 	if placeholderIndex == -1 {
-		log.Logger.Error(ctx, "failed to find ByteRange placeholder", nil, nil)
 		return fmt.Errorf("failed to find ByteRange placeholder")
 	}
 
@@ -340,7 +327,6 @@ func (context *SignContext) replaceSignature() error {
 
 	signature, err := context.createSignature()
 	if err != nil {
-		log.Logger.Error(cContext.Background(), "failed to create signature", err, nil)
 		return fmt.Errorf("failed to create signature: %w", err)
 	}
 

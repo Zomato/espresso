@@ -6,8 +6,6 @@ import (
 	"fmt"
 	"io"
 	"text/template"
-
-	log "github.com/Zomato/espresso/lib/logger"
 )
 
 type StreamStorage struct {
@@ -15,7 +13,6 @@ type StreamStorage struct {
 
 func (s *StreamStorage) GetTemplate(ctx context.Context, req *GetTemplateRequest) (*template.Template, error) {
 	if req.TemplateBytes == nil {
-		log.Logger.Error(ctx, "input template stream is required for strem storage", nil, nil)
 		return nil, fmt.Errorf("input template stream is required for stream storage")
 	}
 
@@ -25,7 +22,6 @@ func (s *StreamStorage) PutDocument(ctx context.Context, req *PostDocumentReques
 	// Read all bytes from the rod.StreamReader
 	pdfBytes, err := io.ReadAll(*reader)
 	if err != nil {
-		log.Logger.Error(ctx, "failed to read PDF stream", err, nil)
 		return "", fmt.Errorf("failed to read PDF stream: %v", err)
 	}
 
@@ -35,7 +31,6 @@ func (s *StreamStorage) PutDocument(ctx context.Context, req *PostDocumentReques
 }
 func (s *StreamStorage) GetDocument(ctx context.Context, req *GetDocumentRequest) (io.Reader, error) {
 	if req.InputFileBytes == nil {
-		log.Logger.Error(ctx, "input file bytes are required for stream storage", nil, nil)
 		return nil, fmt.Errorf("input file bytes are required for stream storage")
 	}
 

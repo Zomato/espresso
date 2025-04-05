@@ -1,10 +1,8 @@
 package workerpool
 
 import (
-	"context"
 	"time"
 
-	log "github.com/Zomato/espresso/lib/logger"
 	"github.com/panjf2000/ants/v2"
 )
 
@@ -31,7 +29,6 @@ func Initialize(size int, expiryDuration time.Duration) {
 		ants.WithExpiryDuration(expiryDuration),
 	)
 	if err != nil {
-		log.Logger.Error(context.Background(), "could not initialize worker pool", err, nil)
 
 		panic(err)
 	}

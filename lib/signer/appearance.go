@@ -2,16 +2,11 @@ package signer
 
 import (
 	"bytes"
-	cContext "context"
 	"fmt"
 	"strconv"
-
-	log "github.com/Zomato/espresso/lib/logger"
 )
 
 func (context *SignContext) createVisualSignature(visible bool, pageNumber uint32, rect [4]float64) ([]byte, error) {
-	ctx := cContext.Background()
-
 	var visual_signature bytes.Buffer
 
 	visual_signature.WriteString("<<\n")
@@ -26,13 +21,11 @@ func (context *SignContext) createVisualSignature(visible bool, pageNumber uint3
 
 		appearance, err := context.createAppearance(rect)
 		if err != nil {
-			log.Logger.Error(ctx, "failed to create appearance", err, nil)
 			return nil, fmt.Errorf("failed to create appearance: %w", err)
 		}
 
 		appearanceObjectId, err := context.addObject(appearance)
 		if err != nil {
-			log.Logger.Error(ctx, "failed to add appearance object", err, nil)
 			return nil, fmt.Errorf("failed to add appearance object: %w", err)
 		}
 
@@ -126,7 +119,6 @@ func (context *SignContext) createIncPageUpdate(pageNumber, annot uint32) ([]byt
 }
 
 func (context *SignContext) createAppearance(rect [4]float64) ([]byte, error) {
-	ctx := cContext.Background()
 
 	text := context.SignData.Signature.Info.Name
 
@@ -134,10 +126,6 @@ func (context *SignContext) createAppearance(rect [4]float64) ([]byte, error) {
 	rectHeight := rect[3] - rect[1]
 
 	if rectWidth < 1 || rectHeight < 1 {
-		log.Logger.Error(ctx, "inavlid rectangl dimensions", nil, map[string]any{
-			"width":  rectWidth,
-			"height": rectHeight,
-		})
 		return nil, fmt.Errorf("invalid rectangle dimensions: width %.2f and height %.2f must be greater than 0", rectWidth, rectHeight)
 	}
 

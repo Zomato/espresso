@@ -10,12 +10,9 @@ import (
 	"io"
 	"time"
 
-	log "github.com/Zomato/espresso/lib/logger"
 	"github.com/digitorus/pdf"
 	"github.com/digitorus/pkcs7"
 	"github.com/mattetti/filebuffer"
-
-	cContext "context"
 )
 
 func Sign(input io.ReadSeeker, output io.Writer, rdr *pdf.Reader, size int64, sign_data SignData) error {
@@ -44,8 +41,6 @@ func Sign(input io.ReadSeeker, output io.Writer, rdr *pdf.Reader, size int64, si
 }
 
 func (context *SignContext) SignPDF() error {
-	ctx := cContext.Background()
-
 	if context.SignData.Signature.CertType == 0 {
 		context.SignData.Signature.CertType = 1
 	}
@@ -97,7 +92,6 @@ func (context *SignContext) SignPDF() error {
 
 		degenerated, err := pkcs7.DegenerateCertificate(context.SignData.Certificate.Raw)
 		if err != nil {
-			log.Logger.Error(ctx, "failed to degenrate certificate", err, nil)
 			return fmt.Errorf("failed to degenerate certificate: %w", err)
 		}
 
@@ -114,7 +108,6 @@ func (context *SignContext) SignPDF() error {
 			for _, cert := range certificate_chain {
 				degenerated, err := pkcs7.DegenerateCertificate(cert.Raw)
 				if err != nil {
-					log.Logger.Error(ctx, "failed to degenrate certificate in chain", err, nil)
 					return fmt.Errorf("failed to degenerate certificate in chain: %w", err)
 				}
 
@@ -123,7 +116,6 @@ func (context *SignContext) SignPDF() error {
 		}
 
 		if err := context.fetchRevocationData(); err != nil {
-			log.Logger.Error(ctx, "failed to fetch revocation data", err, nil)
 			return fmt.Errorf("failed to fetch revocation data: %w", err)
 		}
 	}
@@ -143,14 +135,12 @@ func (context *SignContext) SignPDF() error {
 
 	context.SignData.objectId, err = context.addObject(signature_object)
 	if err != nil {
-		log.Logger.Error(ctx, "failed to add signature object", err, nil)
 		return fmt.Errorf("failed to add signature object: %w", err)
 	}
 
 	visible := false
 	rectangle := [4]float64{0, 0, 0, 0}
 	if context.SignData.Signature.CertType != ApprovalSignature && context.SignData.Appearance.Visible {
-		log.Logger.Error(ctx, "visible signatures are only allowed for approval signatures", nil, nil)
 		return fmt.Errorf("visible signatures are only allowed for approval signatures")
 	} else if context.SignData.Signature.CertType == ApprovalSignature && context.SignData.Appearance.Visible {
 		visible = true
@@ -164,58 +154,48 @@ func (context *SignContext) SignPDF() error {
 
 	visual_signature, err := context.createVisualSignature(visible, context.SignData.Appearance.Page, rectangle)
 	if err != nil {
-		log.Logger.Error(ctx, "failed to create visual signature", err, nil)
 		return fmt.Errorf("failed to create visual signature: %w", err)
 	}
 
 	context.VisualSignData.objectId, err = context.addObject(visual_signature)
 	if err != nil {
-		log.Logger.Error(ctx, "failed to add visual signature object", err, nil)
 		return fmt.Errorf("failed to add visual signature object: %w", err)
 	}
 
 	if context.SignData.Appearance.Visible {
 		inc_page_update, err := context.createIncPageUpdate(context.SignData.Appearance.Page, context.VisualSignData.objectId)
 		if err != nil {
-			log.Logger.Error(ctx, "failed to create incremental page update", err, nil)
 			return fmt.Errorf("failed to create incremental page update: %w", err)
 		}
 		err = context.updateObject(context.VisualSignData.pageObjectId, inc_page_update)
 		if err != nil {
-			log.Logger.Error(ctx, "failed to add incremental page update object", err, nil)
 			return fmt.Errorf("failed to add incremental page update object: %w", err)
 		}
 	}
 
 	catalog, err := context.createCatalog()
 	if err != nil {
-		log.Logger.Error(ctx, "failed to create catalog", err, nil)
 		return fmt.Errorf("failed to create catalog: %w", err)
 	}
 
 	context.CatalogData.ObjectId, err = context.addObject(catalog)
 	if err != nil {
-		log.Logger.Error(ctx, "failed to add catalog object", err, nil)
 		return fmt.Errorf("failed to add catalog object: %w", err)
 	}
 
 	if err := context.writeXref(); err != nil {
-		log.Logger.Error(ctx, "failed to write xref", err, nil)
 		return fmt.Errorf("failed to write xref: %w", err)
 	}
 
 	if err := context.writeTrailer(); err != nil {
-		log.Logger.Error(ctx, "failed to write trailer", err, nil)
 		return fmt.Errorf("failed to write trailer: %w", err)
 	}
 
 	if err := context.updateByteRange(); err != nil {
-		log.Logger.Error(ctx, "failed to update byte range", err, nil)
 		return fmt.Errorf("failed to update byte range: %w", err)
 	}
 
 	if err := context.replaceSignature(); err != nil {
-		log.Logger.Error(ctx, "failed to replace signature", err, nil)
 		return fmt.Errorf("failed to replace signature: %w", err)
 	}
 
@@ -273,7 +253,6 @@ func SignPdfStream(ctx context.Context, pdfStream io.Reader, cert *x509.Certific
 	var pdfBuffer bytes.Buffer
 	_, err := io.Copy(&pdfBuffer, pdfStream)
 	if err != nil {
-		log.Logger.Error(ctx, "failed to read pdf stream", err, nil)
 		return nil, fmt.Errorf("failed to read pdf stream: %v", err)
 	}
 
@@ -281,7 +260,6 @@ func SignPdfStream(ctx context.Context, pdfStream io.Reader, cert *x509.Certific
 
 	pdfReader, err := pdf.NewReader(bytes.NewReader(pdfBytes), int64(len(pdfBytes)))
 	if err != nil {
-		log.Logger.Error(ctx, "failed to create PDF reader", err, nil)
 		return nil, fmt.Errorf("failed to create PDF reader: %v", err)
 	}
 
@@ -309,7 +287,6 @@ func SignPdfStream(ctx context.Context, pdfStream io.Reader, cert *x509.Certific
 		TSA:               TSA{},
 	})
 	if err != nil {
-		log.Logger.Error(ctx, "failed sign PDF", err, nil)
 		return nil, fmt.Errorf("failed to sign PDF: %v", err)
 	}
 

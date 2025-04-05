@@ -17,7 +17,6 @@ func GetHtmlPdf(ctx context.Context, params *GetHtmlPdfInput, storeAdapter *temp
 
 	startTime := time.Now()
 	if params == nil {
-		log.Logger.Error(ctx, "params are required", nil, nil)
 		return nil, fmt.Errorf("params are required")
 	}
 
@@ -30,18 +29,15 @@ func GetHtmlPdf(ctx context.Context, params *GetHtmlPdfInput, storeAdapter *temp
 	if storeAdapter != nil {
 		templateFile, err = (*storeAdapter).GetTemplate(ctx, &params.TemplateRequest)
 		if err != nil {
-			log.Logger.Error(ctx, "unable to get template file from store", err, nil)
 			return nil, fmt.Errorf("unable to get template file from store: %v", err)
 		}
 	} else {
 		if len(params.TemplateRequest.TemplateBytes) > 0 {
 			templateFile, err = template.New("stream").Parse(string(params.TemplateRequest.TemplateBytes))
 			if err != nil {
-				log.Logger.Error(ctx, "unable to parse template file", err, nil)
 				return nil, fmt.Errorf("unable to parse template file: %v", err)
 			}
 		} else {
-			log.Logger.Error(ctx, "storage configuration is invalid", nil, nil)
 			return nil, fmt.Errorf("storage configuration is invalid")
 		}
 	}
@@ -53,7 +49,6 @@ func GetHtmlPdf(ctx context.Context, params *GetHtmlPdfInput, storeAdapter *temp
 
 	var unmarshaledData map[string]interface{}
 	if err := json.Unmarshal(data, &unmarshaledData); err != nil {
-		log.Logger.Error(ctx, "unable to unmarshal JSON data", err, nil)
 		return nil, fmt.Errorf("unable to unmarshal JSON data: %v", err)
 	}
 
@@ -78,7 +73,6 @@ func GetHtmlPdf(ctx context.Context, params *GetHtmlPdfInput, storeAdapter *temp
 
 	htmlContent, err := ExecuteTemplate(ctx, templateFile, unmarshaledData)
 	if err != nil {
-		log.Logger.Error(ctx, "unable to execute template file", err, nil)
 		return nil, fmt.Errorf("unable to execute template file: %v", err)
 	}
 
@@ -99,7 +93,6 @@ func GetHtmlPdf(ctx context.Context, params *GetHtmlPdfInput, storeAdapter *temp
 
 	err = page.SetDocumentContent(string(htmlContent))
 	if err != nil {
-		log.Logger.Error(ctx, "unable to generate pdf", err, nil)
 		return nil, fmt.Errorf("unable to generate pdf: %v", err)
 	}
 
@@ -109,19 +102,16 @@ func GetHtmlPdf(ctx context.Context, params *GetHtmlPdfInput, storeAdapter *temp
 
 		err = page.WaitLoad()
 		if err != nil {
-			log.Logger.Error(ctx, "error in waiting for page load", err, nil)
 			return nil, fmt.Errorf("error in waiting for page load: %v", err)
 		}
 
 		body, err := page.Element("html")
 		if err != nil {
-			log.Logger.Error(ctx, "error in getting html element", err, nil)
 			return nil, fmt.Errorf("error in getting html element: %v", err)
 		}
 
 		heightProp, err := body.Property("scrollHeight")
 		if err != nil {
-			log.Logger.Error(ctx, "error in getting scroll height", err, nil)
 			return nil, fmt.Errorf("error in getting scroll height: %v", err)
 		}
 
@@ -137,7 +127,6 @@ func GetHtmlPdf(ctx context.Context, params *GetHtmlPdfInput, storeAdapter *temp
 
 	pdfStream, err := page.PDF(pdfParams)
 	if err != nil {
-		log.Logger.Error(ctx, "unable to generate pdf", err, nil)
 		return nil, fmt.Errorf("unable to generate pdf: %v", err)
 	}
 

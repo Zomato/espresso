@@ -1,13 +1,11 @@
 package signer
 
 import (
-	"context"
 	"fmt"
 	"math"
 	"strings"
 	"time"
 
-	log "github.com/Zomato/espresso/lib/logger"
 	"github.com/digitorus/pdf"
 	"golang.org/x/text/encoding/unicode"
 	"golang.org/x/text/transform"
@@ -110,8 +108,5 @@ func findPageByNumber(pages pdf.Value, targetPageNumber uint32) (pdf.Value, erro
 		}
 	}
 
-	log.Logger.Error(context.Background(), "page number not found", nil, map[string]any{
-		"page_number": targetPageNumber,
-	})
 	return pdf.Value{}, fmt.Errorf("page number %d not found", targetPageNumber)
 }

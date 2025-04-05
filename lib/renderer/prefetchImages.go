@@ -111,14 +111,12 @@ func PrefetchImages(ctx context.Context, data map[string]interface{}) map[string
 // Fetch an image and convert it to a data URI
 func fetchImageAsDataURIFromURL(url string) (string, error) {
 	startTime := time.Now()
-	ctx := context.Background()
 
 	duration := time.Since(startTime)
 	log.Logger.Info(context.Background(), "fetching image at", map[string]any{"time": duration, "url": url})
 
 	resp, err := http.Get(url)
 	if err != nil {
-		log.Logger.Error(ctx, "failed to fetch image", err, nil)
 		return "", fmt.Errorf("failed to fetch image: %v", err)
 	}
 
@@ -128,13 +126,11 @@ func fetchImageAsDataURIFromURL(url string) (string, error) {
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		log.Logger.Error(ctx, "failed to fetch image", nil, map[string]any{"status_code": resp.StatusCode})
 		return "", fmt.Errorf("failed to fetch image, status code: %d", resp.StatusCode)
 	}
 
 	imageBytes, err := io.ReadAll(resp.Body)
 	if err != nil {
-		log.Logger.Error(ctx, "failed to read image bytes", err, nil)
 		return "", fmt.Errorf("failed to read image bytes: %v", err)
 	}
 

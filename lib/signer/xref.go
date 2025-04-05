@@ -9,17 +9,11 @@ import (
 	"io"
 	"strconv"
 	"strings"
-
-	cContext "context"
-
-	log "github.com/Zomato/espresso/lib/logger"
 )
 
 func (context *SignContext) writeXref() error {
-	ctx := cContext.Background()
 
 	if _, err := context.OutputBuffer.Write([]byte("\n")); err != nil {
-		log.Logger.Error(ctx, "failed to write new line before xref", err, nil)
 		return fmt.Errorf("failed to write newline before xref: %w", err)
 	}
 	context.NewXrefStart = int64(context.OutputBuffer.Buff.Len())
@@ -30,7 +24,6 @@ func (context *SignContext) writeXref() error {
 	case "stream":
 		return context.writeXrefStream()
 	default:
-		log.Logger.Error(ctx, "unknown xref type", nil, map[string]any{"type": context.PDFReader.XrefInformation.Type})
 		return fmt.Errorf("unknown xref type: %s", context.PDFReader.XrefInformation.Type)
 	}
 }
@@ -38,7 +31,6 @@ func (context *SignContext) writeXref() error {
 func (context *SignContext) getLastObjectIDFromXref() (uint32, error) {
 	xref := context.PDFReader.Xref()
 	if len(xref) == 0 {
-		log.Logger.Error(cContext.Background(), "no xref entries found", nil, nil)
 		return 0, fmt.Errorf("no xref entries found")
 	}
 
@@ -55,37 +47,31 @@ func (context *SignContext) getLastObjectIDFromXref() (uint32, error) {
 }
 
 func (context *SignContext) writeIncrXrefTable() error {
-	ctx := cContext.Background()
 
 	if _, err := context.OutputBuffer.Write([]byte("xref\n")); err != nil {
-		log.Logger.Error(ctx, "failed to write incremental xref header", err, nil)
 		return fmt.Errorf("failed to write incremental xref header: %w", err)
 	}
 
 	for _, entry := range context.updatedXrefEntries {
 		pageXrefObj := fmt.Sprintf("%d %d\n", entry.ID, 1)
 		if _, err := context.OutputBuffer.Write([]byte(pageXrefObj)); err != nil {
-			log.Logger.Error(ctx, "failed to write updated xref object", err, nil)
 			return fmt.Errorf("failed to write updated xref object: %w", err)
 		}
 
 		xrefLine := fmt.Sprintf("%010d 00000 n\r\n", entry.Offset)
 		if _, err := context.OutputBuffer.Write([]byte(xrefLine)); err != nil {
-			log.Logger.Error(ctx, "failed to write updated incremental xref entry", err, nil)
 			return fmt.Errorf("failed to write updated incremental xref entry: %w", err)
 		}
 	}
 
 	startXrefObj := fmt.Sprintf("%d %d\n", context.lastXrefID+1, len(context.newXrefEntries))
 	if _, err := context.OutputBuffer.Write([]byte(startXrefObj)); err != nil {
-		log.Logger.Error(ctx, "failed to write starting xref object", err, nil)
 		return fmt.Errorf("failed to write starting xref object: %w", err)
 	}
 
 	for _, entry := range context.newXrefEntries {
 		xrefLine := fmt.Sprintf("%010d 00000 n\r\n", entry.Offset)
 		if _, err := context.OutputBuffer.Write([]byte(xrefLine)); err != nil {
-			log.Logger.Error(ctx, "failed to write incremental xref entry", err, nil)
 			return fmt.Errorf("failed to write incremental xref entry: %w", err)
 		}
 	}
@@ -94,7 +80,6 @@ func (context *SignContext) writeIncrXrefTable() error {
 }
 
 func (context *SignContext) writeXrefStream() error {
-	ctx := cContext.Background()
 
 	var buffer bytes.Buffer
 
@@ -104,31 +89,26 @@ func (context *SignContext) writeXrefStream() error {
 	}
 
 	if err := writeXrefStreamEntries(&buffer, context); err != nil {
-		log.Logger.Error(ctx, "failed to write xref stream entries", err, nil)
 		return fmt.Errorf("failed to write xref stream entries: %w", err)
 	}
 
 	streamBytes, err := encodeXrefStream(buffer.Bytes(), predictor)
 	if err != nil {
-		log.Logger.Error(ctx, "failed to encode xref stream", err, nil)
 		return fmt.Errorf("failed to encode xref stream: %w", err)
 	}
 
 	var xrefStreamObject bytes.Buffer
 
 	if err := writeXrefStreamHeader(&xrefStreamObject, context, len(streamBytes)); err != nil {
-		log.Logger.Error(ctx, "failed to write xref stream header", err, nil)
 		return fmt.Errorf("failed to write xref stream header: %w", err)
 	}
 
 	if err := writeXrefStreamContent(&xrefStreamObject, streamBytes); err != nil {
-		log.Logger.Error(ctx, "failed to write xref stream content", err, nil)
 		return fmt.Errorf("failed to write xref stream content: %w", err)
 	}
 
 	_, err = context.addObject(xrefStreamObject.Bytes())
 	if err != nil {
-		log.Logger.Error(ctx, "failed to add xref stream object", err, nil)
 		return fmt.Errorf("failed to add xref stream object: %w", err)
 	}
 

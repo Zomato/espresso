@@ -94,9 +94,7 @@ func removeBlobURL(page *rod.Page, blobURL string) error {
 	}`, blobURL)
 
 	if err != nil {
-		err := fmt.Errorf("failed to execute JavaScript for blob URL: %v", err)
-		log.Logger.Error(context.Background(), "JS Execution Failed", err, nil)
-		return err
+		return fmt.Errorf("failed to execute JavaScript for blob URL: %v", err)
 	}
 
 	return nil

@@ -19,9 +19,7 @@ func Init(ctx context.Context, tabPool int) error {
 
 	browserPath := os.Getenv("ROD_BROWSER_BIN")
 	if browserPath == "" {
-		err := fmt.Errorf("ROD_BROWSER_BIN environment variable not set")
-		log.Logger.Error(ctx, "ENV Missing", err, nil)
-		return err
+		return fmt.Errorf("ROD_BROWSER_BIN environment variable not set")
 	}
 
 	launcher := launcher.New().Bin(browserPath).
@@ -76,17 +74,13 @@ func Init(ctx context.Context, tabPool int) error {
 
 	url, err := launcher.Launch()
 	if err != nil {
-		err := fmt.Errorf("failed to launch browser: %v", err)
-		log.Logger.Error(ctx, "", err, nil)
-		return err
+		return fmt.Errorf("failed to launch browser: %v", err)
 	}
 	fmt.Printf("Browser launched at URL: %s\n", url)
 
 	browser := rod.New().ControlURL(url)
 	if err := browser.Connect(); err != nil {
-		err := fmt.Errorf("failed to connect to browser: %v", err)
-		log.Logger.Error(ctx, "", err, nil)
-		return err
+		return fmt.Errorf("failed to connect to browser: %v", err)
 	}
 	Browser = browser
 
