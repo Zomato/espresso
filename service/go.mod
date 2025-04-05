@@ -7,10 +7,12 @@ toolchain go1.23.1
 require (
 	github.com/Zomato/espresso/lib v0.0.0-20250321161824-082e62c67636
 	github.com/go-rod/rod v0.116.2
+	github.com/rs/zerolog v1.34.0
 	github.com/spf13/viper v1.19.0
 	github.com/stretchr/testify v1.10.0
 )
 
+// replace github.com/Zomato/espresso/lib => github.com/x-sushant-x/espresso/lib v0.0.0-b0f8f60eedca0a2a68e8a223fb5db24471fa25e0
 replace github.com/Zomato/espresso/lib => ../lib
 
 require (
@@ -53,7 +55,6 @@ require (
 	github.com/mitchellh/mapstructure v1.5.0 // indirect
 	github.com/panjf2000/ants/v2 v2.11.2 // indirect
 	github.com/pelletier/go-toml/v2 v2.2.2 // indirect
-	github.com/rs/zerolog v1.34.0 // indirect
 	github.com/sagikazarmark/locafero v0.4.0 // indirect
 	github.com/sagikazarmark/slog-shim v0.1.0 // indirect
 	github.com/sourcegraph/conc v0.3.0 // indirect

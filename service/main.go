@@ -9,14 +9,19 @@ import (
 
 	"github.com/Zomato/espresso/lib/browser_manager"
 
+	customLogger "github.com/Zomato/espresso/lib/logger"
 	"github.com/Zomato/espresso/lib/workerpool"
 	"github.com/Zomato/espresso/service/controller/pdf_generation"
 	"github.com/Zomato/espresso/service/internal/pkg/viperpkg"
+	"github.com/Zomato/espresso/service/utils"
 	"github.com/spf13/viper"
 )
 
 func main() {
 	ctx := context.Background()
+
+	zeroLogger := utils.NewZeroLogger()
+	customLogger.Initialize(zeroLogger)
 
 	viperpkg.InitConfig()
 
