@@ -19,8 +19,6 @@ ENV GOSUMDB=off \
 # Copy go.mod and go.sum first to leverage Docker cache
 COPY service/go.mod service/go.sum ./service/
 
-COPY lib /app/espresso/lib/
-
 # Download dependencies
 RUN cd service && \
     go mod download
