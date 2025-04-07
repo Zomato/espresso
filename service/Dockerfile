@@ -63,10 +63,6 @@ RUN chown -R chrome:chrome /app
 # Set the user to chrome for the container
 USER chrome
 
-# To download dependencies as non root user
-ENV GOPATH=/home/chrome/go
-RUN mkdir -p $GOPATH/pkg/mod && chmod -R 777 $GOPATH/pkg/mod
-
 EXPOSE 8081
 
 # Change the CMD to run the Go application directly
