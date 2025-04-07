@@ -83,6 +83,31 @@ This will:
    - "PDF generation failed": Check HTML template validity
    - "Storage error": Verify storage configuration and permissions
 
+## Logger Setup
+The `ILogger` interface present inside `/lib/logger.go` supports the following log levels:
+
+- `Info`
+- `Warn`
+- `Error`
+- `Debug`
+
+Each method accepts:
+
+- `ctx`: A `context.Context` for request-scoped logging or tracing
+- `msg`: Log message string
+- `fields`: Key-value pairs for structured logging
+
+#### Setting Up Logger
+
+1. Implement the `ILogger` interface using your preferred logger.
+2. Call `log.Initialize(yourLoggerInstance)` inside `/service/main.go`
+3. Use `log.Logger.Info()`, `log.Logger.Error()`, etc., throughout your code.
+
+#### Example: Using Zerolog
+A sample implementation of ILogger interface can be found at `/service/utils/zerolog.go` and initialized in `service/main.go`
+
+<br>
+
 ## Next Steps
 
 - Check the API documentation for more endpoints
