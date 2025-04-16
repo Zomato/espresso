@@ -7,7 +7,6 @@ import (
 	"encoding/asn1"
 	"encoding/hex"
 	"fmt"
-	"log"
 	"strconv"
 	"strings"
 
@@ -15,6 +14,9 @@ import (
 	"github.com/digitorus/timestamp"
 	"golang.org/x/crypto/cryptobyte"
 
+	cContext "context"
+
+	log "github.com/Zomato/espresso/lib/logger"
 	cryptobyte_asn1 "golang.org/x/crypto/cryptobyte/asn1"
 )
 
@@ -328,7 +330,7 @@ func (context *SignContext) replaceSignature() error {
 	hex.Encode(dst, signature)
 
 	if uint32(len(dst)) > context.SignatureMaxLength {
-		log.Println("Signature too long, retrying with increased buffer size.")
+		log.Logger.Info(cContext.Background(), "Signature too long, retrying with increased buffer size", nil)
 
 		context.SignatureMaxLengthBase += (uint32(len(dst)) - context.SignatureMaxLength) + 1
 		return context.SignPDF()
