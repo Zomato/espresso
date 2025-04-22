@@ -11,6 +11,7 @@ import (
 	"sync"
 	"time"
 
+	log "github.com/Zomato/espresso/lib/logger"
 	"github.com/Zomato/espresso/lib/workerpool"
 )
 
@@ -45,23 +46,23 @@ func PrefetchImages(ctx context.Context, data map[string]interface{}) map[string
 						wg.Done()
 						if r := recover(); r != nil {
 							err := fmt.Errorf("panic: %v and stacktrace %s", r, string(debug.Stack()))
-							fmt.Println("Recovered from panic: ", err)
+							log.Logger.Info(ctx, "recovered from panic", map[string]any{"error": err})
 						}
 					}()
 					var dataURI string
 					var err error
 					if strings.HasPrefix(v, "https://") {
 						duration := time.Since(startTime)
-						fmt.Printf("fetching %s image at :: %s\n", v, duration)
+						log.Logger.Info(ctx, "fetching image at", map[string]any{"name": v, "time": duration})
 						dataURI, err = fetchImageAsDataURIFromURL(v)
 						if err != nil {
-							fmt.Printf("failed to download image for key %s: %v\n", k, err)
+							log.Logger.Error(ctx, "failed to download image", err, map[string]any{"key": k})
 							return
 						}
 					}
 
 					if dataURI == "" {
-						fmt.Printf("failed to download image for key %s: dataURI is empty\n", k)
+						log.Logger.Error(ctx, "failed to download image. data uri is empty", nil, map[string]any{"key": k})
 						mu.Lock()
 						parentData[k] = ""
 						mu.Unlock()
@@ -69,15 +70,15 @@ func PrefetchImages(ctx context.Context, data map[string]interface{}) map[string
 					}
 
 					duration := time.Since(startTime)
-					fmt.Printf("fetched %s image data at :: %s\n", v, duration)
+					log.Logger.Info(ctx, "fetched image data at", map[string]any{"time": duration, "image": v})
 
 					mu.Lock()
 					parentData[k] = dataURI
 					mu.Unlock()
-					fmt.Printf("replaced image data for key %s at :: %s, error :: %v\n", k, duration, err)
+					log.Logger.Info(ctx, "replaced image data at", map[string]any{"time": duration, "key": k, "error": err})
 				}, key, strValue, current.data)
 				if err != nil {
-					fmt.Printf("failed to submit task to worker pool: %v\n", err)
+					log.Logger.Error(ctx, "failed to submit task to worker pool", err, nil)
 				}
 			} else if nestedMap, ok := value.(map[string]interface{}); ok {
 				stack = append(stack, stackItem{key: key, data: nestedMap})
@@ -94,12 +95,12 @@ func PrefetchImages(ctx context.Context, data map[string]interface{}) map[string
 	}
 
 	duration := time.Since(startTime)
-	fmt.Println("prefetching images completed at :: ", duration)
+	log.Logger.Info(ctx, "prefetching images completed at", map[string]any{"time": duration})
 
 	wg.Wait()
 
 	duration = time.Since(startTime)
-	fmt.Println("all worker pool tasks completed at :: ", duration)
+	log.Logger.Info(ctx, "all worker pool tasks completed at", map[string]any{"time": duration})
 
 	return data
 }
@@ -109,7 +110,7 @@ func fetchImageAsDataURIFromURL(url string) (string, error) {
 	startTime := time.Now()
 
 	duration := time.Since(startTime)
-	fmt.Printf("fetching %s image at :: %s\n", url, duration)
+	log.Logger.Info(context.Background(), "fetching image at", map[string]any{"time": duration, "url": url})
 
 	resp, err := http.Get(url)
 	if err != nil {
@@ -117,7 +118,7 @@ func fetchImageAsDataURIFromURL(url string) (string, error) {
 	}
 
 	duration = time.Since(startTime)
-	fmt.Printf("fetched %s image data at :: %s\n", url, duration)
+	log.Logger.Info(context.Background(), "fetched image at", map[string]any{"time": duration, "url": url})
 
 	defer resp.Body.Close()
 
@@ -140,6 +141,6 @@ func fetchImageAsDataURIFromURL(url string) (string, error) {
 	dataURI := fmt.Sprintf("data:%s;base64,%s", contentType, base64.StdEncoding.EncodeToString(imageBytes))
 
 	duration = time.Since(startTime)
-	fmt.Printf("returning %s image data at :: %s\n", url, duration)
+	log.Logger.Info(context.Background(), "returning image at", map[string]any{"time": duration, "url": url})
 	return dataURI, nil
 }
