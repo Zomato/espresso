@@ -1,10 +1,13 @@
 module github.com/Zomato/espresso/service
 
-go 1.22.4
+go 1.23.0
+
+toolchain go1.23.1
 
 require (
-	github.com/Zomato/espresso/lib v0.0.0-20250316142812-954ffe9efdb5
+	github.com/Zomato/espresso/lib v0.0.0-20250422055733-4aa4a50d2b3b
 	github.com/go-rod/rod v0.116.2
+	github.com/rs/zerolog v1.34.0
 	github.com/spf13/viper v1.19.0
 	github.com/stretchr/testify v1.10.0
 )
@@ -44,6 +47,8 @@ require (
 	github.com/hashicorp/hcl v1.0.0 // indirect
 	github.com/magiconair/properties v1.8.7 // indirect
 	github.com/mattetti/filebuffer v1.0.1 // indirect
+	github.com/mattn/go-colorable v0.1.14 // indirect
+	github.com/mattn/go-isatty v0.0.20 // indirect
 	github.com/mitchellh/mapstructure v1.5.0 // indirect
 	github.com/panjf2000/ants/v2 v2.11.2 // indirect
 	github.com/pelletier/go-toml/v2 v2.2.2 // indirect
@@ -64,7 +69,7 @@ require (
 	golang.org/x/crypto v0.33.0 // indirect
 	golang.org/x/exp v0.0.0-20230905200255-921286631fa9 // indirect
 	golang.org/x/sync v0.11.0 // indirect
-	golang.org/x/sys v0.30.0 // indirect
+	golang.org/x/sys v0.32.0 // indirect
 	golang.org/x/text v0.22.0 // indirect
 	gopkg.in/ini.v1 v1.67.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect

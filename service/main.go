@@ -9,9 +9,11 @@ import (
 
 	"github.com/Zomato/espresso/lib/browser_manager"
 
+	logger "github.com/Zomato/espresso/lib/logger"
 	"github.com/Zomato/espresso/lib/workerpool"
 	"github.com/Zomato/espresso/service/controller/pdf_generation"
 	"github.com/Zomato/espresso/service/internal/pkg/viperpkg"
+	"github.com/Zomato/espresso/service/utils"
 	"github.com/spf13/viper"
 )
 
@@ -19,6 +21,10 @@ func main() {
 	ctx := context.Background()
 
 	viperpkg.InitConfig()
+
+	// Replace ZeroLog with any logging library by implementing ILogger interface.
+	zeroLog := utils.NewZeroLogger()
+	logger.Initialize(zeroLog)
 
 	log.Printf("Template storage type: %s", viper.GetString("template_storage.storage_type"))
 	log.Printf("File storage type: %s", viper.GetString("file_storage.storage_type"))
