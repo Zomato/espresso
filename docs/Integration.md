@@ -254,7 +254,7 @@ pdf, err := renderer.GetHtmlPdf(ctx, input, nil) // Note: nil adapter
 ### 2. Disk Storage
 ```go
 
-diskAdapter, err := templatestore.TemplateStorageAdapterFactory(templatestore.TemplateStorageConfig{
+diskAdapter, err := templatestore.TemplateStorageAdapterFactory(templatestore.StorageConfig{
     StorageType: "disk",
 })
 input := &renderer.GetHtmlPdfInput{
@@ -279,7 +279,7 @@ Note: You can use your own implementation to replace the spf13/viper package
 //   accessKeyID: "your-key"
 //   secretAccessKey: "your-secret"
 
-s3Adapter, err := templatestore.TemplateStorageAdapterFactory(templatestore.TemplateStorageConfig{
+s3Adapter, err := templatestore.TemplateStorageAdapterFactory(templatestore.StorageConfig{
     StorageType: "s3",
     S3Config   :  &s3.Config{
         // your configuration
@@ -315,7 +315,7 @@ pdf, err := renderer.GetHtmlPdf(ctx, input, &s3Adapter)
 ### 4. MySQL Storage
 ```go
 
-mysqlAdapter, err := templatestore.TemplateStorageAdapterFactory(templatestore.TemplateStorageConfig{
+mysqlAdapter, err := templatestore.TemplateStorageAdapterFactory(templatestore.StorageConfig{
     StorageType: "mysql",
     MysqlDSN: "your mysql dsn connection string"
 })
