@@ -1,9 +1,7 @@
 package utils
 
 import (
-	"bytes"
 	"context"
-	"fmt"
 	"os"
 	"time"
 
@@ -20,16 +18,6 @@ func NewZeroLogger() ZeroLog {
 	log.Logger = log.Output(zerolog.ConsoleWriter{
 		Out:        os.Stderr,
 		TimeFormat: time.RFC3339,
-		FormatExtra: func(m map[string]interface{}, b *bytes.Buffer) error {
-			for k, v := range m {
-				if k == "message" || k == "level" {
-					continue
-				}
-
-				_, _ = fmt.Fprintf(b, " %s=%v", k, v)
-			}
-			return nil
-		},
 	})
 
 	zerolog.SetGlobalLevel(zerolog.DebugLevel)
@@ -41,6 +29,10 @@ func NewZeroLogger() ZeroLog {
 
 func addFields(event *zerolog.Event, fields map[string]any) *zerolog.Event {
 	for k, v := range fields {
+		if k == "time" {
+			event = event.Interface("timestamp", v)
+		}
+
 		event = event.Interface(k, v)
 	}
 
