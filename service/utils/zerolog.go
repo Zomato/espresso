@@ -31,9 +31,9 @@ func addFields(event *zerolog.Event, fields map[string]any) *zerolog.Event {
 	for k, v := range fields {
 		if k == "time" {
 			event = event.Interface("timestamp", v)
+		} else {
+			event = event.Interface(k, v)
 		}
-
-		event = event.Interface(k, v)
 	}
 
 	return event
