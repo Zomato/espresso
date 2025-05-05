@@ -27,7 +27,7 @@ See our [Quick Start Guide](docs/QuickStart.md) for running the service using Do
 
 ## Requirements
 
-- Go 1.22+
+- Go 1.23+
 - Docker & Docker Compose (for running the complete service)
 - X.509 certificates (for PDF signing)
 
