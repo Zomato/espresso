@@ -16,6 +16,7 @@ import (
 	"github.com/Zomato/espresso/lib/workerpool"
 	"github.com/spf13/viper"
 
+	log "github.com/Zomato/espresso/lib/logger"
 	"github.com/go-rod/rod/lib/proto"
 )
 
@@ -91,7 +92,7 @@ func GeneratePDF(ctx context.Context, req *PDFDto, templateStoreAdapter *templat
 	defer pdf.Close()
 
 	duration := time.Since(startTime)
-	fmt.Println("pdf stream received at :: ", duration)
+	log.Logger.Info(ctx, "pdf stream received :: ", map[string]any{"duration": duration})
 
 	duration = time.Since(startTime)
 
@@ -111,7 +112,8 @@ func GeneratePDF(ctx context.Context, req *PDFDto, templateStoreAdapter *templat
 	} else {
 		pdfReader = pdf
 	}
-	fmt.Println("starting upload :: ", duration)
+	log.Logger.Info(ctx, "starting upload :: ", map[string]any{"duration": duration})
+
 	// Use the storage adapter to store the PDF
 	docReq := &templatestore.PostDocumentRequest{
 		FilePath:   req.OutputTemplatePath,
@@ -127,7 +129,7 @@ func GeneratePDF(ctx context.Context, req *PDFDto, templateStoreAdapter *templat
 	}
 
 	duration = time.Since(startTime)
-	fmt.Println("uploaded to storage at :: ", duration)
+	log.Logger.Info(ctx, "uploaded to storage :: ", map[string]any{"duration": duration})
 
 	return nil
 }
@@ -192,7 +194,8 @@ func getViewPort(viewPort *ViewportConfig) *browser_manager.ViewportConfig {
 func SignPDF(ctx context.Context, req *SignPDFDto, fileStoreAdapter *templatestore.StorageAdapter) error {
 
 	reqId := req.ReqId
-	fmt.Println("SignPDF called, req id :: ", reqId)
+	log.Logger.Info(ctx, "SignPDF called ", map[string]any{"req id": reqId})
+
 	// get input file stream
 	freader, err := (*fileStoreAdapter).GetDocument(ctx, &templatestore.GetDocumentRequest{
 		FilePath:       req.InputFilePath,
