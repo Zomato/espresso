@@ -53,7 +53,7 @@ func PrefetchImages(ctx context.Context, data map[string]interface{}) map[string
 					var err error
 					if strings.HasPrefix(v, "https://") {
 						duration := time.Since(startTime)
-						log.Logger.Info(ctx, "fetching image at", map[string]any{"name": v, "time": duration})
+						log.Logger.Info(ctx, "fetching image at", map[string]any{"name": v, "duration": duration})
 						dataURI, err = fetchImageAsDataURIFromURL(v)
 						if err != nil {
 							log.Logger.Error(ctx, "failed to download image", err, map[string]any{"key": k})
@@ -70,12 +70,12 @@ func PrefetchImages(ctx context.Context, data map[string]interface{}) map[string
 					}
 
 					duration := time.Since(startTime)
-					log.Logger.Info(ctx, "fetched image data at", map[string]any{"time": duration, "image": v})
+					log.Logger.Info(ctx, "fetched image data at", map[string]any{"duration": duration, "image": v})
 
 					mu.Lock()
 					parentData[k] = dataURI
 					mu.Unlock()
-					log.Logger.Info(ctx, "replaced image data at", map[string]any{"time": duration, "key": k, "error": err})
+					log.Logger.Info(ctx, "replaced image data at", map[string]any{"duration": duration, "key": k, "error": err})
 				}, key, strValue, current.data)
 				if err != nil {
 					log.Logger.Error(ctx, "failed to submit task to worker pool", err, nil)
@@ -95,12 +95,12 @@ func PrefetchImages(ctx context.Context, data map[string]interface{}) map[string
 	}
 
 	duration := time.Since(startTime)
-	log.Logger.Info(ctx, "prefetching images completed at", map[string]any{"time": duration})
+	log.Logger.Info(ctx, "prefetching images completed at", map[string]any{"duration": duration})
 
 	wg.Wait()
 
 	duration = time.Since(startTime)
-	log.Logger.Info(ctx, "all worker pool tasks completed at", map[string]any{"time": duration})
+	log.Logger.Info(ctx, "all worker pool tasks completed at", map[string]any{"duration": duration})
 
 	return data
 }
@@ -110,7 +110,7 @@ func fetchImageAsDataURIFromURL(url string) (string, error) {
 	startTime := time.Now()
 
 	duration := time.Since(startTime)
-	log.Logger.Info(context.Background(), "fetching image at", map[string]any{"time": duration, "url": url})
+	log.Logger.Info(context.Background(), "fetching image at", map[string]any{"duration": duration, "url": url})
 
 	resp, err := http.Get(url)
 	if err != nil {
@@ -118,7 +118,7 @@ func fetchImageAsDataURIFromURL(url string) (string, error) {
 	}
 
 	duration = time.Since(startTime)
-	log.Logger.Info(context.Background(), "fetched image at", map[string]any{"time": duration, "url": url})
+	log.Logger.Info(context.Background(), "fetched image at", map[string]any{"duration": duration, "url": url})
 
 	defer resp.Body.Close()
 
@@ -141,6 +141,6 @@ func fetchImageAsDataURIFromURL(url string) (string, error) {
 	dataURI := fmt.Sprintf("data:%s;base64,%s", contentType, base64.StdEncoding.EncodeToString(imageBytes))
 
 	duration = time.Since(startTime)
-	log.Logger.Info(context.Background(), "returning image at", map[string]any{"time": duration, "url": url})
+	log.Logger.Info(context.Background(), "returning image at", map[string]any{"duration": duration, "url": url})
 	return dataURI, nil
 }
