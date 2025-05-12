@@ -4,11 +4,10 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-	"os"
 
 	"github.com/Zomato/espresso/lib/s3"
 	"github.com/Zomato/espresso/lib/templatestore"
-	"github.com/spf13/viper"
+	"github.com/Zomato/espresso/service/model"
 )
 
 type EspressoService struct {
@@ -16,41 +15,51 @@ type EspressoService struct {
 	FileStorageAdapter     *templatestore.StorageAdapter
 }
 
-func NewEspressoService() (*EspressoService, error) {
-	templateStorageType := viper.GetString("template_storage.storage_type")
-	if os.Getenv("ENABLE_UI") == "true" && templateStorageType != templatestore.StorageAdapterTypeMySQL {
+func NewEspressoService(config model.Config) (*EspressoService, error) {
+	templateStorageType := config.TemplateStorageConfig.StorageType
+
+	if config.AppConfig.EnableUI && templateStorageType != templatestore.StorageAdapterTypeMySQL {
 		return nil, fmt.Errorf("UI requires MySQL as template storage adapter, got: %s", templateStorageType)
 	}
+
+	mySqlDsn := fmt.Sprintf("%s:%s@tcp(%s:%d)/%s",
+		config.DBConfig.Username,
+		config.DBConfig.Password,
+		config.DBConfig.Host,
+		config.DBConfig.Port,
+		config.DBConfig.Database,
+	)
+
 	templateStorageAdapter, err := templatestore.TemplateStorageAdapterFactory(&templatestore.StorageConfig{
 		StorageType: templateStorageType,
 		// for s3 storage only
 		S3Config: &s3.Config{
-			Endpoint:              viper.GetString("s3.endpoint"),
-			Region:                viper.GetString("s3.region"),
-			Bucket:                viper.GetString("s3.bucket"),
-			Debug:                 viper.GetBool("s3.debug"),
-			ForcePathStyle:        viper.GetBool("s3.forcePathStyle"),
-			UploaderConcurrency:   viper.GetInt("s3.uploaderConcurrency"),
-			UploaderPartSize:      viper.GetInt64("s3.uploaderPartSize"),
-			DownloaderConcurrency: viper.GetInt("s3.downloaderConcurrency"),
-			DownloaderPartSize:    viper.GetInt64("s3.downloaderPartSize"),
-			RetryMaxAttempts:      viper.GetInt("s3.retryMaxAttempts"),
-			UseCustomTransport:    viper.GetBool("s3.useCustomTransport"),
+			Endpoint:              config.S3Config.Endpoint,
+			Region:                config.S3Config.Region,
+			Bucket:                config.S3Config.Bucket,
+			Debug:                 config.S3Config.Debug,
+			ForcePathStyle:        config.S3Config.ForcePathStyle,
+			UploaderConcurrency:   config.S3Config.UploaderConcurrency,
+			UploaderPartSize:      config.S3Config.UploaderPartSizeMB,
+			DownloaderConcurrency: config.S3Config.DownloaderConcurrency,
+			DownloaderPartSize:    config.S3Config.DownloaderPartSizeMB,
+			RetryMaxAttempts:      config.S3Config.RetryMaxAttempts,
+			UseCustomTransport:    config.S3Config.UseCustomTransport,
 		},
 		// for s3 storage only
 		AwsCredConfig: &s3.AwsCredConfig{
-			AccessKeyID:     viper.GetString("aws.accessKeyID"),
-			SecretAccessKey: viper.GetString("aws.secretAccessKey"),
-			SessionToken:    viper.GetString("aws.sessionToken"),
+			AccessKeyID:     config.AWSConfig.AccessKeyID,
+			SecretAccessKey: config.AWSConfig.SecretAccessKey,
+			SessionToken:    config.AWSConfig.SessionToken,
 		},
-		MysqlDSN: viper.GetString("mysql.dsn"), // for mysql adapter
+		MysqlDSN: mySqlDsn, // for mysql adapter
 	})
 	if err != nil {
 		return nil, err
 	}
 
 	fileStorageAdapter, err := templatestore.TemplateStorageAdapterFactory(&templatestore.StorageConfig{
-		StorageType: viper.GetString("file_storage.storage_type"),
+		StorageType: config.FileStorageConfig.StorageType,
 	})
 	if err != nil {
 		return nil, err
@@ -58,8 +67,8 @@ func NewEspressoService() (*EspressoService, error) {
 
 	return &EspressoService{TemplateStorageAdapter: &templateStorageAdapter, FileStorageAdapter: &fileStorageAdapter}, nil
 }
-func Register(mux *http.ServeMux) {
-	espressoService, err := NewEspressoService()
+func Register(mux *http.ServeMux, config model.Config) {
+	espressoService, err := NewEspressoService(config)
 	if err != nil {
 		log.Fatalf("Failed to initialize PDF service: %v", err)
 	}
