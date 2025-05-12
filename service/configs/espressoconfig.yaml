@@ -1,3 +1,6 @@
+app:
+  log_level: "debug"
+
 template_storage:
   storage_type: "mysql"
 
@@ -9,37 +12,42 @@ browser:
 
 workerpool:
   worker_count: 6
-  worker_timeout: 310 # milliseconds
+  worker_timeout_ms: 310 # milliseconds
 
 s3:
   endpoint: "http://localstack:4566"
   debug: false
   region: "us-west-2"
-  forcePathStyle: true
-  uploaderConcurrency: 5
+  force_path_style: true
+  uploader_concurrency: 5
   # 5MB chunks
-  uploaderPartSize: 5
-  downloaderConcurrency: 5
+  uploader_part_size_mb: 5
+  downloader_concurrency: 5
   # 5MB chunks
-  downloaderPartSize: 5242880
-  retryMaxAttempts: 3
+  downloader_part_size_mb: 5242880
+  retry_max_attempts: 3
   bucket: "local-bucket"
-  useCustomTransport: false
+  use_custom_transport: false
 
 aws:
-  accessKeyID: "xxxxx-xxxxx-xxxxx-xxxxx-xxxxx"
-  secretAccessKey: "xxxxx-xxxxx-xxxxx-xxxxx-xxxxx"
-  sessionToken: ""
+  access_key_id: "xxxxx-xxxxx-xxxxx-xxxxx-xxxxx"
+  secret_access_key: "xxxxx-xxxxx-xxxxx-xxxxx-xxxxx"
+  session_token: ""
 
-digital_certificates:
+certificates:
   cert1:
-    cert_filepath: "./inputfiles/certificates/cert.pem"
-    key_filepath: "./inputfiles/certificates/key_pkcs8_encrypted.pem"
+    cert_path: "./inputfiles/certificates/cert.pem"
+    key_path: "./inputfiles/certificates/key_pkcs8_encrypted.pem"
     key_password: "test"
   cert2:
-    cert_filepath: "./certificates/certificate2.pem"
-    key_filepath: "./certificates/pirvatekey2.key"
+    cert_path: "./certificates/certificate2.pem"
+    key_path: "./certificates/pirvatekey2.key"
     key_password: "password2"
 
-mysql:
+db:
+  host: "mysql"
+  port: 3306
+  username: "pdf_user"
+  password: "pdf_password"
+  database: "pdf_templates"
   dsn: "pdf_user:pdf_password@tcp(mysql:3306)/pdf_templates?parseTime=true"
