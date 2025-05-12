@@ -10,33 +10,34 @@ import (
 
 	logger "github.com/Zomato/espresso/lib/logger"
 	"github.com/Zomato/espresso/lib/workerpool"
+	config "github.com/Zomato/espresso/service/configs"
 	"github.com/Zomato/espresso/service/controller/pdf_generation"
-	"github.com/Zomato/espresso/service/internal/pkg/viperpkg"
 	"github.com/Zomato/espresso/service/utils"
-	"github.com/spf13/viper"
 )
 
 func main() {
 	ctx := context.Background()
 
-	viperpkg.InitConfig()
+	config, err := config.Load("/app/espresso/configs")
+	if err != nil {
+		log.Fatalf("Error loading config: %v", err)
+	}
 
 	// Replace ZeroLog with any logging library by implementing ILogger interface.
-	zeroLog := utils.NewZeroLogger()
+	zeroLog := utils.NewZeroLogger(config.AppConfig.LogLevel)
 	logger.Initialize(zeroLog)
 
-	templateStorageType := viper.GetString("template_storage.storage_type")
-	zeroLog.Info(ctx, "Template storage type ", map[string]any{"type": templateStorageType})
+	log.Printf("Template storage type: %s", config.TemplateStorageConfig.StorageType)
+	log.Printf("File storage type: %s", config.FileStorageConfig.StorageType)
 
-	fileStorageType := viper.GetString("file_storage.storage_type")
-	zeroLog.Info(ctx, "File storage type ", map[string]any{"type": fileStorageType})
+	tabpool := config.BrowserConfig.TabPool
 
-	tabpool := viper.GetInt("browser.tab_pool")
 	if err := browser_manager.Init(ctx, tabpool); err != nil {
 		log.Fatalf("Failed to initialize browser: %v", err)
 	}
-	workerCount := viper.GetInt("workerpool.worker_count")
-	workerTimeout := viper.GetInt("workerpool.worker_timeout")
+
+	workerCount := config.WorkerPoolConfig.WorkerCount
+	workerTimeout := config.WorkerPoolConfig.WorkerTimeoutMs
 
 	initializeWorkerPool(workerCount, workerTimeout)
 
@@ -44,7 +45,7 @@ func main() {
 	// Create a new ServeMux
 	mux := http.NewServeMux()
 
-	pdf_generation.Register(mux)
+	pdf_generation.Register(mux, config)
 	// Wrap the entire mux with the CORS middleware
 	corsHandler := enableCORS(mux)
 
