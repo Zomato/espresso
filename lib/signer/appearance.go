@@ -119,6 +119,7 @@ func (context *SignContext) createIncPageUpdate(pageNumber, annot uint32) ([]byt
 }
 
 func (context *SignContext) createAppearance(rect [4]float64) ([]byte, error) {
+
 	text := context.SignData.Signature.Info.Name
 
 	rectWidth := rect[2] - rect[0]

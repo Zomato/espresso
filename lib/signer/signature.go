@@ -7,13 +7,16 @@ import (
 	"encoding/asn1"
 	"encoding/hex"
 	"fmt"
-	"log"
+
 	"strconv"
 	"strings"
 
+	log "github.com/Zomato/espresso/lib/logger"
 	"github.com/digitorus/pkcs7"
 	"github.com/digitorus/timestamp"
 	"golang.org/x/crypto/cryptobyte"
+
+	cContext "context"
 
 	cryptobyte_asn1 "golang.org/x/crypto/cryptobyte/asn1"
 )
@@ -154,6 +157,7 @@ func (context *SignContext) createTimestampPlaceholder() []byte {
 }
 
 func (context *SignContext) createSignature() ([]byte, error) {
+
 	if _, err := context.OutputBuffer.Seek(0, 0); err != nil {
 		return nil, err
 	}
@@ -275,6 +279,7 @@ func (context *SignContext) createSigningCertificateAttribute() (*pkcs7.Attribut
 }
 
 func (context *SignContext) updateByteRange() error {
+
 	if _, err := context.OutputBuffer.Seek(0, 0); err != nil {
 		return err
 	}
@@ -319,6 +324,7 @@ func (context *SignContext) updateByteRange() error {
 }
 
 func (context *SignContext) replaceSignature() error {
+
 	signature, err := context.createSignature()
 	if err != nil {
 		return fmt.Errorf("failed to create signature: %w", err)
@@ -328,7 +334,7 @@ func (context *SignContext) replaceSignature() error {
 	hex.Encode(dst, signature)
 
 	if uint32(len(dst)) > context.SignatureMaxLength {
-		log.Println("Signature too long, retrying with increased buffer size.")
+		log.Logger.Info(cContext.Background(), "Signature too long, retrying with increased buffer size", nil)
 
 		context.SignatureMaxLengthBase += (uint32(len(dst)) - context.SignatureMaxLength) + 1
 		return context.SignPDF()

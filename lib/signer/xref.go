@@ -12,6 +12,7 @@ import (
 )
 
 func (context *SignContext) writeXref() error {
+
 	if _, err := context.OutputBuffer.Write([]byte("\n")); err != nil {
 		return fmt.Errorf("failed to write newline before xref: %w", err)
 	}
@@ -79,6 +80,7 @@ func (context *SignContext) writeIncrXrefTable() error {
 }
 
 func (context *SignContext) writeXrefStream() error {
+
 	var buffer bytes.Buffer
 
 	predictor := context.PDFReader.Trailer().Key("DecodeParms").Key("Predictor").Int64()

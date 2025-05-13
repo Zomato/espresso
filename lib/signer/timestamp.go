@@ -12,6 +12,7 @@ import (
 )
 
 func (context *SignContext) GetTSA(sign_content []byte) (timestamp_response []byte, err error) {
+
 	sign_reader := bytes.NewReader(sign_content)
 	ts_request, err := timestamp.CreateRequest(sign_reader, &timestamp.RequestOptions{
 		Hash:         context.SignData.DigestAlgorithm,

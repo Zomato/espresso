@@ -1,4 +1,4 @@
-FROM --platform=$BUILDPLATFORM golang:1.22.4-bullseye
+FROM --platform=$BUILDPLATFORM golang:1.23.1-bullseye
 
 WORKDIR /app/espresso/
 
