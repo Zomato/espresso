@@ -1,19 +1,24 @@
 package model
 
+import (
+	"github.com/Zomato/espresso/lib/s3"
+)
+
 type Config struct {
 	AppConfig             AppConfig             `mapstructure:"app"`
 	TemplateStorageConfig StorageConfig         `mapstructure:"template_storage"`
 	FileStorageConfig     StorageConfig         `mapstructure:"file_storage"`
 	BrowserConfig         BrowserConfig         `mapstructure:"browser"`
 	WorkerPoolConfig      WorkerPoolConfig      `mapstructure:"workerpool"`
-	S3Config              S3Config              `mapstructure:"s3"`
-	AWSConfig             AWSConfig             `mapstructure:"aws"`
+	S3Config              s3.Config             `mapstructure:"s3"`
+	AWSConfig             s3.AwsCredConfig      `mapstructure:"aws"`
 	CertConfig            map[string]CertConfig `mapstructure:"certificates"`
 	DBConfig              DBConfig              `mapstructure:"db"`
 }
 
 type AppConfig struct {
 	LogLevel      string `mapstructure:"log_level"`
+	ServerPort    int    `mapstructure:"server_port"`
 	EnableUI      bool   `mapstructure:"enable_ui"`
 	RodBrowserBin string `mapstructure:"rod_browser_bin"`
 }
@@ -29,26 +34,6 @@ type BrowserConfig struct {
 type WorkerPoolConfig struct {
 	WorkerCount     int `mapstructure:"worker_count"`
 	WorkerTimeoutMs int `mapstructure:"worker_timeout_ms"`
-}
-
-type S3Config struct {
-	Endpoint              string `mapstructure:"endpoint"`
-	Debug                 bool   `mapstructure:"debug"`
-	Region                string `mapstructure:"region"`
-	ForcePathStyle        bool   `mapstructure:"force_path_style"`
-	UploaderConcurrency   int    `mapstructure:"uploader_concurrency"`
-	UploaderPartSizeMB    int64  `mapstructure:"uploader_part_size_mb"`
-	DownloaderConcurrency int    `mapstructure:"downloader_concurrency"`
-	DownloaderPartSizeMB  int64  `mapstructure:"downloader_part_size_mb"`
-	RetryMaxAttempts      int    `mapstructure:"retry_max_attempts"`
-	Bucket                string `mapstructure:"bucket"`
-	UseCustomTransport    bool   `mapstructure:"use_custom_transport"`
-}
-
-type AWSConfig struct {
-	AccessKeyID     string `mapstructure:"access_key_id"`
-	SecretAccessKey string `mapstructure:"secret_access_key"`
-	SessionToken    string `mapstructure:"session_token"`
 }
 
 type CertConfig struct {
