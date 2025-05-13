@@ -1,5 +1,5 @@
 <div align="center">
-  <img src="docs/assets/espresso.png" alt="Espresso Logo" width="240" height="105">
+  <img src="docs/assets/espresso.png" alt="Espresso Logo" width="260" height="115">
   <h1>Espresso: High Performance PDF Generator and Signer</h1>
 </div>
 
