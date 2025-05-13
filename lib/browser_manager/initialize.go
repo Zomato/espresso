@@ -3,7 +3,6 @@ package browser_manager
 import (
 	"context"
 	"fmt"
-	"os"
 
 	log "github.com/Zomato/espresso/lib/logger"
 	"github.com/go-rod/rod"
@@ -14,12 +13,8 @@ var (
 	Browser *rod.Browser
 )
 
-func Init(ctx context.Context, tabPool int) error {
+func Init(ctx context.Context, tabPool int, browserPath string) error {
 	log.Logger.Info(ctx, "Initializing Browser...", nil)
-	browserPath := os.Getenv("ROD_BROWSER_BIN")
-	if browserPath == "" {
-		return fmt.Errorf("ROD_BROWSER_BIN environment variable not set")
-	}
 
 	launcher := launcher.New().Bin(browserPath).
 		Headless(true).
