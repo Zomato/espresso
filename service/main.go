@@ -19,7 +19,7 @@ import (
 func main() {
 	ctx := context.Background()
 
-	config, err := config.Load("/app/espresso/configs")
+	config, err := config.Load()
 	if err != nil {
 		log.Fatalf("Error loading config: %v", err)
 	}
@@ -32,8 +32,9 @@ func main() {
 	log.Printf("File storage type: %s", config.FileStorageConfig.StorageType)
 
 	tabpool := config.BrowserConfig.TabPool
+	browserPath := config.AppConfig.RodBrowserBin
 
-	if err := browser_manager.Init(ctx, tabpool); err != nil {
+	if err := browser_manager.Init(ctx, tabpool, browserPath); err != nil {
 		log.Fatalf("Failed to initialize browser: %v", err)
 	}
 
@@ -50,8 +51,9 @@ func main() {
 	// Wrap the entire mux with the CORS middleware
 	corsHandler := enableCORS(mux)
 
-	log.Println("Starting PDF client server on :8081")
-	if err := http.ListenAndServe(":8081", corsHandler); err != nil {
+	port := fmt.Sprintf(":%d", config.AppConfig.ServerPort)
+	log.Printf("Starting PDF client server on: %s\n", port)
+	if err := http.ListenAndServe(port, corsHandler); err != nil {
 		log.Fatal(err)
 	}
 
