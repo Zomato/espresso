@@ -5,7 +5,6 @@ import (
 	"log"
 	"net/http"
 
-	"github.com/Zomato/espresso/lib/s3"
 	"github.com/Zomato/espresso/lib/templatestore"
 	"github.com/Zomato/espresso/service/model"
 )
@@ -22,7 +21,7 @@ func NewEspressoService(config model.Config) (*EspressoService, error) {
 		return nil, fmt.Errorf("UI requires MySQL as template storage adapter, got: %s", templateStorageType)
 	}
 
-	mySqlDsn := fmt.Sprintf("%s:%s@tcp(%s:%d)/%s",
+	mySqlDsn := fmt.Sprintf("%s:%s@tcp(%s:%d)/%s?parseTime=true",
 		config.DBConfig.Username,
 		config.DBConfig.Password,
 		config.DBConfig.Host,
@@ -31,28 +30,10 @@ func NewEspressoService(config model.Config) (*EspressoService, error) {
 	)
 
 	templateStorageAdapter, err := templatestore.TemplateStorageAdapterFactory(&templatestore.StorageConfig{
-		StorageType: templateStorageType,
-		// for s3 storage only
-		S3Config: &s3.Config{
-			Endpoint:              config.S3Config.Endpoint,
-			Region:                config.S3Config.Region,
-			Bucket:                config.S3Config.Bucket,
-			Debug:                 config.S3Config.Debug,
-			ForcePathStyle:        config.S3Config.ForcePathStyle,
-			UploaderConcurrency:   config.S3Config.UploaderConcurrency,
-			UploaderPartSize:      config.S3Config.UploaderPartSizeMB,
-			DownloaderConcurrency: config.S3Config.DownloaderConcurrency,
-			DownloaderPartSize:    config.S3Config.DownloaderPartSizeMB,
-			RetryMaxAttempts:      config.S3Config.RetryMaxAttempts,
-			UseCustomTransport:    config.S3Config.UseCustomTransport,
-		},
-		// for s3 storage only
-		AwsCredConfig: &s3.AwsCredConfig{
-			AccessKeyID:     config.AWSConfig.AccessKeyID,
-			SecretAccessKey: config.AWSConfig.SecretAccessKey,
-			SessionToken:    config.AWSConfig.SessionToken,
-		},
-		MysqlDSN: mySqlDsn, // for mysql adapter
+		StorageType:   templateStorageType,
+		S3Config:      &config.S3Config,  // for s3 storage only
+		AwsCredConfig: &config.AWSConfig, // for s3 storage only
+		MysqlDSN:      mySqlDsn,          // for mysql adapter
 	})
 	if err != nil {
 		return nil, err
