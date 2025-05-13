@@ -10,8 +10,8 @@ import (
 
 	logger "github.com/Zomato/espresso/lib/logger"
 	"github.com/Zomato/espresso/lib/workerpool"
-	config "github.com/Zomato/espresso/service/configs"
 	"github.com/Zomato/espresso/service/controller/pdf_generation"
+	"github.com/Zomato/espresso/service/internal/config"
 	"github.com/Zomato/espresso/service/utils"
 )
 
