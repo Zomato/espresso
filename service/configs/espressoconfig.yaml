@@ -1,5 +1,8 @@
 app:
   log_level: "debug"
+  server_port: 8081
+  enable_ui: true
+  rod_browser_bin: "/opt/homebrew/bin/chromium"
 
 template_storage:
   storage_type: "mysql"
@@ -45,9 +48,8 @@ certificates:
     key_password: "password2"
 
 db:
-  host: "mysql"
-  port: 3306
+  host: "localhost"
+  port: 3308
   username: "pdf_user"
   password: "pdf_password"
   database: "pdf_templates"
-  dsn: "pdf_user:pdf_password@tcp(mysql:3306)/pdf_templates?parseTime=true"
