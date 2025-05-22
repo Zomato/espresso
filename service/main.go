@@ -11,7 +11,7 @@ import (
 	logger "github.com/Zomato/espresso/lib/logger"
 	"github.com/Zomato/espresso/lib/workerpool"
 	"github.com/Zomato/espresso/service/controller/pdf_generation"
-	"github.com/Zomato/espresso/service/internal/config"
+	"github.com/Zomato/espresso/service/internal/pkg/config"
 	"github.com/Zomato/espresso/service/utils"
 )
 

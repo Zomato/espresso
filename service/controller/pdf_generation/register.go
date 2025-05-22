@@ -6,7 +6,7 @@ import (
 	"net/http"
 
 	"github.com/Zomato/espresso/lib/templatestore"
-	"github.com/Zomato/espresso/service/model"
+	"github.com/Zomato/espresso/service/internal/pkg/config"
 )
 
 type EspressoService struct {
@@ -14,7 +14,7 @@ type EspressoService struct {
 	FileStorageAdapter     *templatestore.StorageAdapter
 }
 
-func NewEspressoService(config model.Config) (*EspressoService, error) {
+func NewEspressoService(config config.Config) (*EspressoService, error) {
 	templateStorageType := config.TemplateStorageConfig.StorageType
 
 	if config.AppConfig.EnableUI && templateStorageType != templatestore.StorageAdapterTypeMySQL {
@@ -48,7 +48,7 @@ func NewEspressoService(config model.Config) (*EspressoService, error) {
 
 	return &EspressoService{TemplateStorageAdapter: &templateStorageAdapter, FileStorageAdapter: &fileStorageAdapter}, nil
 }
-func Register(mux *http.ServeMux, config model.Config) {
+func Register(mux *http.ServeMux, config config.Config) {
 	espressoService, err := NewEspressoService(config)
 	if err != nil {
 		log.Fatalf("Failed to initialize PDF service: %v", err)
