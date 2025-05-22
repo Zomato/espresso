@@ -24,7 +24,6 @@ func GetHtmlPdf(ctx context.Context, params *GetHtmlPdfInput, storeAdapter *temp
 
 	log.Logger.Info(ctx, "starting template parsing at", map[string]any{"duration": duration})
 
-	fmt.Println("starting template parsing at :: ", duration)
 	var err error
 	var templateFile *template.Template
 	if storeAdapter != nil {
