@@ -9,11 +9,11 @@ import (
 	"strings"
 	"time"
 
-	log "github.com/Zomato/espresso/lib/logger"
 	"github.com/Zomato/espresso/lib/templatestore"
 	"github.com/Zomato/espresso/lib/utils"
 	"github.com/Zomato/espresso/service/internal/pkg/httppkg"
 	"github.com/Zomato/espresso/service/internal/service/generateDoc"
+	svcUtils "github.com/Zomato/espresso/service/utils"
 	"github.com/spf13/viper"
 )
 
@@ -25,7 +25,7 @@ func (s *EspressoService) GeneratePDF(w http.ResponseWriter, r *http.Request) {
 	// Read and parse the request body
 	bodyBytes, err := io.ReadAll(r.Body)
 	if err != nil {
-		log.Logger.Error(ctx, "Error reading request body: %v", err, nil)
+		svcUtils.Logger.Error(ctx, "Error reading request body: %v", err, nil)
 		httppkg.RespondWithError(w, "Failed to read request body", http.StatusBadRequest)
 		return
 	}
@@ -33,13 +33,13 @@ func (s *EspressoService) GeneratePDF(w http.ResponseWriter, r *http.Request) {
 
 	// Parse the request JSON
 	if err := json.Unmarshal(bodyBytes, &req); err != nil {
-		log.Logger.Error(ctx, "Error parsing JSON: %v", err, nil)
+		svcUtils.Logger.Error(ctx, "Error parsing JSON: %v", err, nil)
 		httppkg.RespondWithError(w, "Failed to parse JSON request", http.StatusBadRequest)
 		return
 	}
 
 	reqId := utils.GenerateUniqueID(ctx)
-	log.Logger.Info(ctx, "GeneratePDF called :: ", map[string]any{"req_id": reqId})
+	svcUtils.Logger.Info(ctx, "GeneratePDF called :: ", map[string]any{"req_id": reqId})
 
 	generatePdfReq := &generateDoc.PDFDto{
 		ReqId:              reqId,
@@ -58,7 +58,7 @@ func (s *EspressoService) GeneratePDF(w http.ResponseWriter, r *http.Request) {
 
 	err = generateDoc.GeneratePDF(ctx, generatePdfReq, s.TemplateStorageAdapter, s.FileStorageAdapter)
 	if err != nil {
-		log.Logger.Error(ctx, "error in generating pdf :: %v", err, nil)
+		svcUtils.Logger.Error(ctx, "error in generating pdf :: %v", err, nil)
 		httppkg.RespondWithError(w, "Failed to generate PDF: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
@@ -73,7 +73,7 @@ func (s *EspressoService) GeneratePDF(w http.ResponseWriter, r *http.Request) {
 	}
 
 	duration := time.Since(startTime)
-	log.Logger.Info(ctx, "generated pdf :: ", map[string]any{"req_id": reqId, "duration": duration})
+	svcUtils.Logger.Info(ctx, "generated pdf :: ", map[string]any{"req_id": reqId, "duration": duration})
 
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(responseData)
@@ -84,12 +84,12 @@ func (s *EspressoService) GeneratePDFStream(w http.ResponseWriter, r *http.Reque
 	startTime := time.Now()
 	reqId := utils.GenerateUniqueID(ctx)
 
-	log.Logger.Info(ctx, "GeneratePDFStream called :: ", map[string]any{"req_id": reqId})
+	svcUtils.Logger.Info(ctx, "GeneratePDFStream called :: ", map[string]any{"req_id": reqId})
 
 	// Read and parse the request body
 	bodyBytes, err := io.ReadAll(r.Body)
 	if err != nil {
-		log.Logger.Error(ctx, "Error reading request body: %v", err, nil)
+		svcUtils.Logger.Error(ctx, "Error reading request body: %v", err, nil)
 		httppkg.RespondWithError(w, "Failed to read request body", http.StatusBadRequest)
 		return
 	}
@@ -98,7 +98,7 @@ func (s *EspressoService) GeneratePDFStream(w http.ResponseWriter, r *http.Reque
 	// Parse the request JSON
 	var pdfReq PDFRequest
 	if err := json.Unmarshal(bodyBytes, &pdfReq); err != nil {
-		log.Logger.Error(ctx, "Error parsing JSON: %v", err, nil)
+		svcUtils.Logger.Error(ctx, "Error parsing JSON: %v", err, nil)
 		httppkg.RespondWithError(w, "Failed to parse JSON request", http.StatusBadRequest)
 		return
 	}
@@ -151,7 +151,7 @@ func (s *EspressoService) GeneratePDFStream(w http.ResponseWriter, r *http.Reque
 		StorageType: "stream",
 	})
 	if err != nil {
-		log.Logger.Error(ctx, "error in getting file storage adapter :: %v", err, nil)
+		svcUtils.Logger.Error(ctx, "error in getting file storage adapter :: %v", err, nil)
 		httppkg.RespondWithError(w, "Failed to get file storage adapter: "+err.Error(), http.StatusExpectationFailed)
 		return
 	}
@@ -160,13 +160,13 @@ func (s *EspressoService) GeneratePDFStream(w http.ResponseWriter, r *http.Reque
 		MysqlDSN:    viper.GetString("mysql.dsn"),
 	})
 	if err != nil {
-		log.Logger.Error(ctx, "error in getting file storage adapter :: %v", err, nil)
+		svcUtils.Logger.Error(ctx, "error in getting file storage adapter :: %v", err, nil)
 		httppkg.RespondWithError(w, "Failed to get file storage adapter: "+err.Error(), http.StatusExpectationFailed)
 		return
 	}
 	err = generateDoc.GeneratePDF(ctx, generatePdfReq, &templateStorageAdapter, &fileStorageAdapter)
 	if err != nil {
-		log.Logger.Error(ctx, "error in generating pdf stream:: %v", err, nil)
+		svcUtils.Logger.Error(ctx, "error in generating pdf stream:: %v", err, nil)
 		httppkg.RespondWithError(w, "Failed to generate PDF stream: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
@@ -199,12 +199,12 @@ func (s *EspressoService) GeneratePDFStream(w http.ResponseWriter, r *http.Reque
 		// Write the PDF data
 		_, err = w.Write(generatePdfReq.OutputFileBytes)
 		if err != nil {
-			log.Logger.Error(ctx, "error writing pdf stream :: %v", err, nil)
+			svcUtils.Logger.Error(ctx, "error writing pdf stream :: %v", err, nil)
 			httppkg.RespondWithError(w, "Failed to write PDF stream: "+err.Error(), http.StatusInternalServerError)
 			return
 		}
 		duration := time.Since(startTime)
-		log.Logger.Info(ctx, "generated pdf stream :: ", map[string]any{"req_id": reqId, "duration": duration})
+		svcUtils.Logger.Info(ctx, "generated pdf stream :: ", map[string]any{"req_id": reqId, "duration": duration})
 
 		return
 	} else {
@@ -220,13 +220,13 @@ func (s *EspressoService) SignPDF(w http.ResponseWriter, r *http.Request) {
 	req := &SignPDFRequest{}
 
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		log.Logger.Error(ctx, "error decoding request body :: %v", err, nil)
+		svcUtils.Logger.Error(ctx, "error decoding request body :: %v", err, nil)
 		httppkg.RespondWithError(w, "Error decoding request body: "+err.Error(), http.StatusBadRequest)
 		return
 	}
 
 	reqId := utils.GenerateUniqueID(ctx)
-	log.Logger.Info(ctx, "GeneratePDF called :: ", map[string]any{"req_id": reqId})
+	svcUtils.Logger.Info(ctx, "GeneratePDF called :: ", map[string]any{"req_id": reqId})
 
 	signPDFDto := &generateDoc.SignPDFDto{
 		ReqId:          reqId,
@@ -238,14 +238,14 @@ func (s *EspressoService) SignPDF(w http.ResponseWriter, r *http.Request) {
 		signPDFDto.SignParams = req.SignParams
 	} else {
 		err := fmt.Errorf("signPdf param is not true in the request")
-		log.Logger.Error(ctx, "error in signing pdf :: : %v", err, nil)
+		svcUtils.Logger.Error(ctx, "error in signing pdf :: : %v", err, nil)
 
 		httppkg.RespondWithError(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 	err := generateDoc.SignPDF(ctx, signPDFDto, s.FileStorageAdapter)
 	if err != nil {
-		log.Logger.Error(ctx, "error in signing pdf :: : %v", err, nil)
+		svcUtils.Logger.Error(ctx, "error in signing pdf :: : %v", err, nil)
 		httppkg.RespondWithError(w, "Failed to sign PDF: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
@@ -268,12 +268,12 @@ func (s *EspressoService) GetAllTemplates(w http.ResponseWriter, r *http.Request
 	startTime := time.Now()
 
 	reqId := utils.GenerateUniqueID(ctx)
-	log.Logger.Info(ctx, "GetAllTemplates called :: ", map[string]any{"req_id": reqId})
+	svcUtils.Logger.Info(ctx, "GetAllTemplates called :: ", map[string]any{"req_id": reqId})
 
 	// Get templates from the storage adapter
 	templates, err := (*s.TemplateStorageAdapter).ListTemplates(ctx)
 	if err != nil {
-		log.Logger.Error(ctx, "error listing templates :: : %v", err, nil)
+		svcUtils.Logger.Error(ctx, "error listing templates :: : %v", err, nil)
 		httppkg.RespondWithError(w, "Failed to list templates: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
@@ -310,7 +310,7 @@ func (s *EspressoService) GetAllTemplates(w http.ResponseWriter, r *http.Request
 	}
 
 	duration := time.Since(startTime)
-	log.Logger.Info(ctx, "listed templates :: ", map[string]any{"length": len(templateDataList), "duration": duration})
+	svcUtils.Logger.Info(ctx, "listed templates :: ", map[string]any{"length": len(templateDataList), "duration": duration})
 
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(responseData)
@@ -320,7 +320,7 @@ func (s *EspressoService) GetTemplateById(w http.ResponseWriter, r *http.Request
 
 	templateID := r.URL.Query().Get("template_id")
 	if templateID == "" {
-		log.Logger.Error(ctx, "template id is required ", nil, nil)
+		svcUtils.Logger.Error(ctx, "template id is required ", nil, nil)
 		httppkg.RespondWithError(w, "template id is required", http.StatusBadRequest)
 		return
 	}
@@ -329,7 +329,7 @@ func (s *EspressoService) GetTemplateById(w http.ResponseWriter, r *http.Request
 		TemplateUUID: templateID,
 	})
 	if err != nil {
-		log.Logger.Error(ctx, "error getting template content :: : %v", err, nil)
+		svcUtils.Logger.Error(ctx, "error getting template content :: : %v", err, nil)
 		httppkg.RespondWithError(w, "Failed to get template content: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
@@ -359,20 +359,20 @@ func (s *EspressoService) CreateTemplate(w http.ResponseWriter, r *http.Request)
 	w.Header().Set("Content-Type", "application/json")
 	// decode request body
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		log.Logger.Error(ctx, "error decoding request body :: : %v", err, nil)
+		svcUtils.Logger.Error(ctx, "error decoding request body :: : %v", err, nil)
 
 		httppkg.RespondWithError(w, "Error decoding request body: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
 	// Validate request
 	if req.TemplateName == "" {
-		log.Logger.Error(ctx, "template name is required ", nil, nil)
+		svcUtils.Logger.Error(ctx, "template name is required ", nil, nil)
 		httppkg.RespondWithError(w, "Template name is required", http.StatusBadRequest)
 		return
 	}
 
 	if req.TemplateHtml == "" {
-		log.Logger.Error(ctx, "template html is required ", nil, nil)
+		svcUtils.Logger.Error(ctx, "template html is required ", nil, nil)
 		httppkg.RespondWithError(w, "Template HTML is required", http.StatusBadRequest)
 		return
 	}
@@ -392,7 +392,7 @@ func (s *EspressoService) CreateTemplate(w http.ResponseWriter, r *http.Request)
 
 	templateId, err := (*s.TemplateStorageAdapter).CreateTemplate(ctx, createReq)
 	if err != nil {
-		log.Logger.Error(ctx, "error creating template :: : %v", err, nil)
+		svcUtils.Logger.Error(ctx, "error creating template :: : %v", err, nil)
 		httppkg.RespondWithError(w, "Failed to create template: "+err.Error(), http.StatusInternalServerError)
 		return
 	}

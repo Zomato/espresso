@@ -14,6 +14,10 @@ type ZeroLog struct {
 	logger zerolog.Logger
 }
 
+var (
+	Logger ZeroLog
+)
+
 func NewZeroLogger() ZeroLog {
 	log.Logger = log.Output(zerolog.ConsoleWriter{
 		Out:        os.Stderr,
@@ -22,9 +26,13 @@ func NewZeroLogger() ZeroLog {
 
 	zerolog.SetGlobalLevel(zerolog.DebugLevel)
 
-	return ZeroLog{
+	zeroLog := ZeroLog{
 		logger: log.Logger,
 	}
+
+	Logger = zeroLog
+
+	return zeroLog
 }
 
 func addFields(event *zerolog.Event, fields map[string]any) *zerolog.Event {

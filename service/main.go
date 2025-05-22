@@ -26,10 +26,10 @@ func main() {
 	logger.Initialize(zeroLog)
 
 	templateStorageType := viper.GetString("template_storage.storage_type")
-	logger.Logger.Info(ctx, "Template storage type ", map[string]any{"type": templateStorageType})
+	zeroLog.Info(ctx, "Template storage type ", map[string]any{"type": templateStorageType})
 
 	fileStorageType := viper.GetString("file_storage.storage_type")
-	logger.Logger.Info(ctx, "File storage type ", map[string]any{"type": fileStorageType})
+	zeroLog.Info(ctx, "File storage type ", map[string]any{"type": fileStorageType})
 
 	tabpool := viper.GetInt("browser.tab_pool")
 	if err := browser_manager.Init(ctx, tabpool); err != nil {
@@ -55,7 +55,7 @@ func main() {
 
 	// your implementation
 
-	logger.Logger.Info(ctx, "Server terminated", nil)
+	zeroLog.Info(ctx, "Server terminated", nil)
 }
 
 func initializeWorkerPool(workerCount int, workerTimeout int) {
