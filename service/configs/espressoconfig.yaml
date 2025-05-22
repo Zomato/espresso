@@ -48,8 +48,8 @@ certificates:
     key_password: "password2"
 
 db:
-  host: "localhost"
-  port: 3308
+  host: "mysql"
+  port: 3306
   username: "pdf_user"
   password: "pdf_password"
   database: "pdf_templates"
