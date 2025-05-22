@@ -3,11 +3,10 @@ package config
 import (
 	"fmt"
 
-	"github.com/Zomato/espresso/service/model"
 	"github.com/spf13/viper"
 )
 
-func Load() (model.Config, error) {
+func Load() (Config, error) {
 	viper.AutomaticEnv()
 
 	viper.SetDefault(CONFIG_FILE_NAME, "espressoconfig")
@@ -24,20 +23,20 @@ func Load() (model.Config, error) {
 
 	err := viper.ReadInConfig()
 	if err != nil {
-		return model.Config{}, err
+		return Config{}, err
 	}
 
-	var config model.Config
+	var config Config
 	err = viper.Unmarshal(&config)
 	if err != nil {
-		return model.Config{}, err
+		return Config{}, err
 	}
 
 	// TODO: Why are these fields set in the Dockerfile and not in the config.yaml file?
 	config.AppConfig.EnableUI = viper.GetBool(ENABLE_UI)
 	config.AppConfig.RodBrowserBin = viper.GetString(ROD_BROWSER_BIN)
 	if config.AppConfig.RodBrowserBin == "" {
-		return model.Config{}, fmt.Errorf("environment variable %s not set", ROD_BROWSER_BIN)
+		return Config{}, fmt.Errorf("environment variable %s not set", ROD_BROWSER_BIN)
 	}
 
 	return config, nil
