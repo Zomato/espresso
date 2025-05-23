@@ -18,13 +18,22 @@ var (
 	Logger ZeroLog
 )
 
-func NewZeroLogger() ZeroLog {
-	log.Logger = log.Output(zerolog.ConsoleWriter{
-		Out:        os.Stderr,
-		TimeFormat: time.RFC3339,
-	})
+func NewZeroLogger(level string) ZeroLog {
+	log.Logger = log.Output(zerolog.ConsoleWriter{Out: os.Stderr, TimeFormat: time.RFC3339})
+	// zerolog.SetGlobalLevel(zerolog.DebugLevel)
 
-	zerolog.SetGlobalLevel(zerolog.DebugLevel)
+	switch level {
+	case "debug":
+		zerolog.SetGlobalLevel(zerolog.DebugLevel)
+	case "info":
+		zerolog.SetGlobalLevel(zerolog.InfoLevel)
+	case "warn":
+		zerolog.SetGlobalLevel(zerolog.WarnLevel)
+	case "error":
+		zerolog.SetGlobalLevel(zerolog.ErrorLevel)
+	default:
+		zerolog.SetGlobalLevel(zerolog.InfoLevel)
+	}
 
 	zeroLog := ZeroLog{
 		logger: log.Logger,
