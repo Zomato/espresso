@@ -67,7 +67,8 @@ func ReleaseTab(page *rod.Page) {
 	}
 	err := page.SetDocumentContent("")
 	if err != nil {
-		fmt.Println("Error releasing tab", err)
+		log.Logger.Error(context.Background(), "Error releasing tab", err, nil)
+
 		panic(err)
 	}
 
@@ -79,7 +80,7 @@ func ClearAllBlobs(page *rod.Page, dynaminData map[string]interface{}) {
 		strValue, ok := value.(string)
 		if ok && strValue != "" {
 			if err := removeBlobURL(page, strValue); err != nil {
-				fmt.Println("Error clearing blob URL", err)
+				log.Logger.Error(context.Background(), "Error clearing blob URL", err, nil)
 				panic(err)
 			}
 		}
