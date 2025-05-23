@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"fmt"
 	"log"
 	"net/http"
 	"time"
@@ -26,8 +25,11 @@ func main() {
 	zeroLog := utils.NewZeroLogger()
 	logger.Initialize(zeroLog)
 
-	log.Printf("Template storage type: %s", viper.GetString("template_storage.storage_type"))
-	log.Printf("File storage type: %s", viper.GetString("file_storage.storage_type"))
+	templateStorageType := viper.GetString("template_storage.storage_type")
+	zeroLog.Info(ctx, "Template storage type ", map[string]any{"type": templateStorageType})
+
+	fileStorageType := viper.GetString("file_storage.storage_type")
+	zeroLog.Info(ctx, "File storage type ", map[string]any{"type": fileStorageType})
 
 	tabpool := viper.GetInt("browser.tab_pool")
 	if err := browser_manager.Init(ctx, tabpool); err != nil {
@@ -53,7 +55,7 @@ func main() {
 
 	// your implementation
 
-	fmt.Println("Server terminated")
+	zeroLog.Info(ctx, "Server terminated", nil)
 }
 
 func initializeWorkerPool(workerCount int, workerTimeout int) {
