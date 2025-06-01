@@ -75,7 +75,8 @@ func Init(ctx context.Context, tabPool int) error {
 	if err != nil {
 		return fmt.Errorf("failed to launch browser: %v", err)
 	}
-	fmt.Printf("Browser launched at URL: %s\n", url)
+
+	log.Logger.Info(ctx, "Browser launched", map[string]any{"URL": url})
 
 	browser := rod.New().ControlURL(url)
 	if err := browser.Connect(); err != nil {

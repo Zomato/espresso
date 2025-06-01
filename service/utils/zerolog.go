@@ -14,6 +14,10 @@ type ZeroLog struct {
 	logger zerolog.Logger
 }
 
+var (
+	Logger ZeroLog
+)
+
 func NewZeroLogger(level string) ZeroLog {
 	log.Logger = log.Output(zerolog.ConsoleWriter{Out: os.Stderr, TimeFormat: time.RFC3339})
 	// zerolog.SetGlobalLevel(zerolog.DebugLevel)
@@ -31,14 +35,18 @@ func NewZeroLogger(level string) ZeroLog {
 		zerolog.SetGlobalLevel(zerolog.InfoLevel)
 	}
 
-	return ZeroLog{
+	zeroLog := ZeroLog{
 		logger: log.Logger,
 	}
+
+	Logger = zeroLog
+
+	return zeroLog
 }
 
 func addFields(event *zerolog.Event, fields map[string]any) *zerolog.Event {
 	for k, v := range fields {
-		event.Interface(k, v)
+		event = event.Interface(k, v)
 	}
 
 	return event

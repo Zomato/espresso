@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"fmt"
 	"log"
 	"net/http"
 	"time"
@@ -12,7 +11,7 @@ import (
 	logger "github.com/Zomato/espresso/lib/logger"
 	"github.com/Zomato/espresso/lib/workerpool"
 	"github.com/Zomato/espresso/service/controller/pdf_generation"
-	"github.com/Zomato/espresso/service/internal/config"
+	"github.com/Zomato/espresso/service/internal/pkg/config"
 	"github.com/Zomato/espresso/service/utils"
 )
 
@@ -59,7 +58,7 @@ func main() {
 
 	// your implementation
 
-	fmt.Println("Server terminated")
+	zeroLog.Info(ctx, "Server terminated", nil)
 }
 
 func initializeWorkerPool(workerCount int, workerTimeout int) {
