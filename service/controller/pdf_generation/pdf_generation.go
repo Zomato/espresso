@@ -14,7 +14,6 @@ import (
 	"github.com/Zomato/espresso/service/internal/pkg/httppkg"
 	"github.com/Zomato/espresso/service/internal/service/generateDoc"
 	svcUtils "github.com/Zomato/espresso/service/utils"
-	"github.com/spf13/viper"
 )
 
 func (s *EspressoService) GeneratePDF(w http.ResponseWriter, r *http.Request) {
@@ -56,7 +55,7 @@ func (s *EspressoService) GeneratePDF(w http.ResponseWriter, r *http.Request) {
 		generatePdfReq.SignParams = req.SignParams
 	}
 
-	err = generateDoc.GeneratePDF(ctx, generatePdfReq, s.TemplateStorageAdapter, s.FileStorageAdapter)
+	err = generateDoc.GeneratePDF(ctx, generatePdfReq, s.TemplateStorageAdapter, s.FileStorageAdapter, s.CredentialStore)
 	if err != nil {
 		svcUtils.Logger.Error(ctx, "error in generating pdf :: %v", err, nil)
 		httppkg.RespondWithError(w, "Failed to generate PDF: "+err.Error(), http.StatusInternalServerError)
@@ -143,7 +142,7 @@ func (s *EspressoService) GeneratePDFStream(w http.ResponseWriter, r *http.Reque
 	if pdfReq.SignPdf {
 		generatePdfReq.SignParams = &generateDoc.SignParams{
 			SignPdf:       true,
-			CertConfigKey: "digital_certificates.cert1", // certificate details are stored in config file
+			CertConfigKey: "cert1", // certificate details are stored in config file
 		}
 	}
 
@@ -155,16 +154,8 @@ func (s *EspressoService) GeneratePDFStream(w http.ResponseWriter, r *http.Reque
 		httppkg.RespondWithError(w, "Failed to get file storage adapter: "+err.Error(), http.StatusExpectationFailed)
 		return
 	}
-	templateStorageAdapter, err := templatestore.TemplateStorageAdapterFactory(&templatestore.StorageConfig{
-		StorageType: "mysql",
-		MysqlDSN:    viper.GetString("mysql.dsn"),
-	})
-	if err != nil {
-		svcUtils.Logger.Error(ctx, "error in getting file storage adapter :: %v", err, nil)
-		httppkg.RespondWithError(w, "Failed to get file storage adapter: "+err.Error(), http.StatusExpectationFailed)
-		return
-	}
-	err = generateDoc.GeneratePDF(ctx, generatePdfReq, &templateStorageAdapter, &fileStorageAdapter)
+	
+	err = generateDoc.GeneratePDF(ctx, generatePdfReq, s.TemplateStorageAdapter, &fileStorageAdapter, s.CredentialStore)
 	if err != nil {
 		svcUtils.Logger.Error(ctx, "error in generating pdf stream:: %v", err, nil)
 		httppkg.RespondWithError(w, "Failed to generate PDF stream: "+err.Error(), http.StatusInternalServerError)
@@ -243,7 +234,7 @@ func (s *EspressoService) SignPDF(w http.ResponseWriter, r *http.Request) {
 		httppkg.RespondWithError(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-	err := generateDoc.SignPDF(ctx, signPDFDto, s.FileStorageAdapter)
+	err := generateDoc.SignPDF(ctx, signPDFDto, s.FileStorageAdapter, s.CredentialStore)
 	if err != nil {
 		svcUtils.Logger.Error(ctx, "error in signing pdf :: : %v", err, nil)
 		httppkg.RespondWithError(w, "Failed to sign PDF: "+err.Error(), http.StatusInternalServerError)

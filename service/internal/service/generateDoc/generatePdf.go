@@ -5,7 +5,6 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"sync"
 	"time"
 
 	"github.com/Zomato/espresso/lib/browser_manager"
@@ -13,8 +12,6 @@ import (
 	"github.com/Zomato/espresso/lib/renderer"
 	"github.com/Zomato/espresso/lib/signer"
 	"github.com/Zomato/espresso/lib/templatestore"
-	"github.com/Zomato/espresso/lib/workerpool"
-	"github.com/spf13/viper"
 
 	svcUtils "github.com/Zomato/espresso/service/utils"
 	"github.com/go-rod/rod/lib/proto"
@@ -24,7 +21,13 @@ import (
 // If signing is enabled, it will load the signing credentials in parallel and sign the PDF before storing it.
 // The generated PDF is stored in the file store with the provided output file path.
 // The function returns an error if anything goes wrong during generation, signing, or storage of the PDF.
-func GeneratePDF(ctx context.Context, req *PDFDto, templateStoreAdapter *templatestore.StorageAdapter, fileStoreAdapter *templatestore.StorageAdapter) error {
+func GeneratePDF(
+	ctx context.Context,
+	req *PDFDto,
+	templateStoreAdapter *templatestore.StorageAdapter,
+	fileStoreAdapter *templatestore.StorageAdapter,
+	credentialStore *certmanager.CredentialStore,
+) error {
 
 	startTime := time.Now()
 
@@ -32,36 +35,18 @@ func GeneratePDF(ctx context.Context, req *PDFDto, templateStoreAdapter *templat
 	content := req.Content
 	viewPortConfig := req.ViewPort
 	pdfParams := req.PdfParams
-
 	viewPort := getViewPort(viewPortConfig)
-	// Start loading credentials in parallel if signing is enabled
-	var credWg sync.WaitGroup
-	var credErr error
+
 	var credentials *certmanager.SigningCredentials
 	var pdfReader io.Reader
-	toBeSigned := false
 
-	if req.SignParams != nil && req.SignParams.SignPdf {
-		toBeSigned = true
-	}
+	toBeSigned := req.SignParams != nil && req.SignParams.SignPdf
 	if toBeSigned {
-		certConfig := &certmanager.CertificateConfig{
-			CertFilePath: viper.GetString(req.SignParams.CertConfigKey + ".cert_filepath"),
-			KeyFilePath:  viper.GetString(req.SignParams.CertConfigKey + ".key_filepath"),
-			KeyPassword:  viper.GetString(req.SignParams.CertConfigKey + ".key_password"),
-		}
-		credWg.Add(1)
-		err := workerpool.Pool().SubmitTask(
-			func(args ...interface{}) {
-				defer credWg.Done()
-				ctxArg := args[0].(context.Context)
-				credentials, credErr = certmanager.LoadSigningCredentials(ctxArg, certConfig)
-			},
-			ctx,
-		)
-
-		if err != nil {
-			return fmt.Errorf("failed to submit credential loading task: %v", err)
+		credKey := req.SignParams.CertConfigKey
+		var exists bool
+		credentials, exists = credentialStore.GetCredential(credKey)
+		if !exists {
+			return fmt.Errorf("signing credentials not found for key: %s", credKey)
 		}
 	}
 
@@ -97,12 +82,6 @@ func GeneratePDF(ctx context.Context, req *PDFDto, templateStoreAdapter *templat
 	duration = time.Since(startTime)
 
 	if toBeSigned {
-		credWg.Wait()
-
-		if credErr != nil {
-			return fmt.Errorf("failed to load signing credentials: %v", credErr)
-		}
-
 		signedPDF, err := signer.SignPdfStream(ctx, pdf, credentials.Certificate, credentials.PrivateKey)
 		if err != nil {
 			return fmt.Errorf("failed to sign pdf using SignPdfStream: %v", err)
@@ -191,7 +170,12 @@ func getViewPort(viewPort *ViewportConfig) *browser_manager.ViewportConfig {
 	return viewSettings
 }
 
-func SignPDF(ctx context.Context, req *SignPDFDto, fileStoreAdapter *templatestore.StorageAdapter) error {
+func SignPDF(
+	ctx context.Context,
+	req *SignPDFDto,
+	fileStoreAdapter *templatestore.StorageAdapter,
+	credentialStore *certmanager.CredentialStore,
+) error {
 
 	reqId := req.ReqId
 	svcUtils.Logger.Info(ctx, "SignPDF called ", map[string]any{"req id": reqId})
@@ -205,38 +189,18 @@ func SignPDF(ctx context.Context, req *SignPDFDto, fileStoreAdapter *templatesto
 	if err != nil {
 		return fmt.Errorf("failed to get input file: %v", err)
 	}
-	// Start loading credentials in parallel if signing is enabled
-	var credWg sync.WaitGroup
-	var credErr error
+
 	var credentials *certmanager.SigningCredentials
 	var pdfReader io.Reader
 
 	if req.SignParams.SignPdf {
-		credWg.Add(1)
-		certConfig := &certmanager.CertificateConfig{
-			CertFilePath: viper.GetString(req.SignParams.CertConfigKey + ".cert_filepath"),
-			KeyFilePath:  viper.GetString(req.SignParams.CertConfigKey + ".key_filepath"),
-			KeyPassword:  viper.GetString(req.SignParams.CertConfigKey + ".key_password"),
+		credKey := req.SignParams.CertConfigKey
+		var exists bool
+		credentials, exists = credentialStore.GetCredential(credKey)
+		if !exists {
+			return fmt.Errorf("signing credentials not found for key: %s", credKey)
 		}
-		err := workerpool.Pool().SubmitTask(
-			func(args ...interface{}) {
-				defer credWg.Done()
-				ctxArg := args[0].(context.Context)
-				credentials, credErr = certmanager.LoadSigningCredentials(ctxArg, certConfig)
-			},
-			ctx,
-		)
 
-		if err != nil {
-			return fmt.Errorf("failed to submit credential loading task: %v", err)
-		}
-	}
-	if req.SignParams.SignPdf {
-		credWg.Wait()
-
-		if credErr != nil {
-			return fmt.Errorf("failed to load signing credentials: %v", credErr)
-		}
 		// convert pdfreader to *rod.StreamReader
 		signedPDF, err := signer.SignPdfStream(ctx, freader, credentials.Certificate, credentials.PrivateKey)
 		if err != nil {
