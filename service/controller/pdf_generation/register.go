@@ -5,6 +5,7 @@ import (
 	"log"
 	"net/http"
 
+	"github.com/Zomato/espresso/lib/certmanager"
 	"github.com/Zomato/espresso/lib/templatestore"
 	"github.com/Zomato/espresso/service/internal/pkg/config"
 )
@@ -12,6 +13,7 @@ import (
 type EspressoService struct {
 	TemplateStorageAdapter *templatestore.StorageAdapter
 	FileStorageAdapter     *templatestore.StorageAdapter
+	CredentialStore        *certmanager.CredentialStore
 }
 
 func NewEspressoService(config config.Config) (*EspressoService, error) {
@@ -46,7 +48,16 @@ func NewEspressoService(config config.Config) (*EspressoService, error) {
 		return nil, err
 	}
 
-	return &EspressoService{TemplateStorageAdapter: &templateStorageAdapter, FileStorageAdapter: &fileStorageAdapter}, nil
+	credentialStore, err := certmanager.NewCredentialStore(config.CertConfig)
+	if err != nil {
+		return nil, err
+	}
+
+	return &EspressoService{
+		TemplateStorageAdapter: &templateStorageAdapter,
+		FileStorageAdapter:     &fileStorageAdapter,
+		CredentialStore:        credentialStore,
+	}, nil
 }
 func Register(mux *http.ServeMux, config config.Config) {
 	espressoService, err := NewEspressoService(config)

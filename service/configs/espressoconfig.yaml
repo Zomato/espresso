@@ -39,13 +39,9 @@ aws:
 
 certificates:
   cert1:
-    cert_path: "./inputfiles/certificates/cert.pem"
-    key_path: "./inputfiles/certificates/key_pkcs8_encrypted.pem"
+    cert_file_path: "./inputfiles/certificates/cert.pem"
+    key_file_path: "./inputfiles/certificates/key_pkcs8_encrypted.pem"
     key_password: "test"
-  cert2:
-    cert_path: "./certificates/certificate2.pem"
-    key_path: "./certificates/pirvatekey2.key"
-    key_password: "password2"
 
 db:
   host: "mysql"
