@@ -1,19 +1,20 @@
 package config
 
 import (
+	"github.com/Zomato/espresso/lib/certmanager"
 	"github.com/Zomato/espresso/lib/s3"
 )
 
 type Config struct {
-	AppConfig             AppConfig             `mapstructure:"app"`
-	TemplateStorageConfig StorageConfig         `mapstructure:"template_storage"`
-	FileStorageConfig     StorageConfig         `mapstructure:"file_storage"`
-	BrowserConfig         BrowserConfig         `mapstructure:"browser"`
-	WorkerPoolConfig      WorkerPoolConfig      `mapstructure:"workerpool"`
-	S3Config              s3.Config             `mapstructure:"s3"`
-	AWSConfig             s3.AwsCredConfig      `mapstructure:"aws"`
-	CertConfig            map[string]CertConfig `mapstructure:"certificates"`
-	DBConfig              DBConfig              `mapstructure:"db"`
+	AppConfig             AppConfig                                `mapstructure:"app"`
+	TemplateStorageConfig StorageConfig                            `mapstructure:"template_storage"`
+	FileStorageConfig     StorageConfig                            `mapstructure:"file_storage"`
+	BrowserConfig         BrowserConfig                            `mapstructure:"browser"`
+	WorkerPoolConfig      WorkerPoolConfig                         `mapstructure:"workerpool"`
+	S3Config              s3.Config                                `mapstructure:"s3"`
+	AWSConfig             s3.AwsCredConfig                         `mapstructure:"aws"`
+	CertConfig            map[string]certmanager.CertificateConfig `mapstructure:"certificates"`
+	DBConfig              DBConfig                                 `mapstructure:"db"`
 }
 
 type AppConfig struct {
@@ -34,12 +35,6 @@ type BrowserConfig struct {
 type WorkerPoolConfig struct {
 	WorkerCount     int `mapstructure:"worker_count"`
 	WorkerTimeoutMs int `mapstructure:"worker_timeout_ms"`
-}
-
-type CertConfig struct {
-	CertPath    string `mapstructure:"cert_path"`
-	KeyPath     string `mapstructure:"key_path"`
-	KeyPassword string `mapstructure:"key_password"`
 }
 
 type DBConfig struct {
