@@ -3,7 +3,7 @@ module github.com/Zomato/espresso/service
 go 1.23.0
 
 require (
-	github.com/Zomato/espresso/lib v0.0.0-20250422055733-4aa4a50d2b3b
+	github.com/Zomato/espresso/lib v0.0.0-20250523093533-6d517dcb5c35
 	github.com/go-rod/rod v0.116.2
 	github.com/rs/zerolog v1.34.0
 	github.com/spf13/viper v1.19.0
