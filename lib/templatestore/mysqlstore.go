@@ -7,6 +7,7 @@ import (
 	"io"
 	"text/template"
 
+	log "github.com/Zomato/espresso/lib/logger"
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/google/uuid"
 )
@@ -208,7 +209,7 @@ func (m *MySQLTemplateStorage) CreateTemplate(ctx context.Context, req *CreateTe
 	}
 
 	if count > 0 {
-		fmt.Println("template ID already exists: ", templateID)
+		log.Logger.Info(ctx, "template ID already exists: ", map[string]any{"id": templateID})
 		return "", fmt.Errorf("server error, failed at id generation")
 	}
 

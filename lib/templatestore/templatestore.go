@@ -39,7 +39,7 @@ func TemplateStorageAdapterFactory(conf *StorageConfig) (StorageAdapter, error) 
 		return &DiskTemplateStorage{}, nil
 	case StorageAdapterTypeS3:
 		if conf == nil {
-			return nil, errors.New("templateStorageConfig is required")
+			return nil, errors.New("StorageConfig is required")
 		}
 		if conf.S3Config == nil {
 			return nil, errors.New("S3 configuration is required")
