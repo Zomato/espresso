@@ -10,7 +10,7 @@
   },
   "dependencies": {
     "@monaco-editor/react": "^4.7.0",
-    "axios": "^1.8.1",
+    "axios": "^1.12.0",
     "clsx": "^2.1.1",
     "htmlhint": "^1.1.4",
     "lodash": "^4.17.21",
