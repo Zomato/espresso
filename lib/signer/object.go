@@ -6,6 +6,7 @@ import (
 )
 
 func (context *SignContext) addObject(object []byte) (uint32, error) {
+
 	if context.lastXrefID == 0 {
 		lastXrefID, err := context.getLastObjectIDFromXref()
 		if err != nil {

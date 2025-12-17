@@ -44,7 +44,6 @@ func LoadSigningCredentials(ctx context.Context, certConfig *CertificateConfig) 
 }
 
 func getCertificate(certPath string) (*x509.Certificate, error) {
-
 	certBytes, err := os.ReadFile(certPath)
 	if err != nil {
 		return nil, fmt.Errorf("failed to read certificate file: %v", err)
@@ -63,7 +62,6 @@ func getCertificate(certPath string) (*x509.Certificate, error) {
 }
 
 func getKey(keyPath, password string) (crypto.Signer, error) {
-
 	keyBytes, err := os.ReadFile(keyPath)
 	if err != nil {
 		return nil, fmt.Errorf("failed to read private key file: %v", err)
