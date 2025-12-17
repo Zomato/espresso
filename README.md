@@ -1,4 +1,7 @@
-# Espresso: High Performance PDF Generator and Signer
+<div align="center">
+  <img src="docs/assets/espresso.png" alt="Espresso Logo" width="260" height="115">
+  <h1>Espresso: High Performance PDF Generator and Signer</h1>
+</div>
 
 Espresso is the ultimate solution for high-performance PDF generation and digital signing. Whether you need to generate PDFs from HTML templates or sign them with digital certificates, Espresso is designed to handle massive workloads with ease. With rendering and signing times under 200ms, Espresso is ready to handle peak loads of 120K requests per minute (RPM).
 
