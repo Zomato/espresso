@@ -2,7 +2,6 @@ package renderer
 
 import (
 	"context"
-	"os"
 	"testing"
 	"time"
 
@@ -15,8 +14,8 @@ import (
 
 func TestGetHtmlPdf(t *testing.T) {
 	ctx := context.Background()
-	os.Setenv("ROD_BROWSER_BIN", "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome")
-	err := browser_manager.Init(ctx, 1)
+	browserPath := "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
+	err := browser_manager.Init(ctx, 1, browserPath)
 	assert.NoError(t, err)
 	concurrency := 2
 
