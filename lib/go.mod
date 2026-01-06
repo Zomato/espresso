@@ -2,8 +2,6 @@ module github.com/Zomato/espresso/lib
 
 go 1.23.0
 
-replace github.com/Zomato/espresso/lib => ../lib
-
 require (
 	github.com/aws/aws-sdk-go-v2 v1.36.3
 	github.com/aws/aws-sdk-go-v2/config v1.29.9
