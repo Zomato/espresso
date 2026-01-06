@@ -16,6 +16,7 @@ import (
 	"github.com/Zomato/espresso/lib/workerpool"
 	"github.com/spf13/viper"
 
+	svcUtils "github.com/Zomato/espresso/service/utils"
 	"github.com/go-rod/rod/lib/proto"
 )
 
@@ -84,14 +85,13 @@ func GeneratePDF(ctx context.Context, req *PDFDto, templateStoreAdapter *templat
 		IsSinglePage: pdfParams.IsSinglePage,
 	}
 
-	pdf, err := renderer.GetHtmlPdf(ctx, &pdfProps, templateStoreAdapter)
+	pdfBytes, err := renderer.GetHtmlPdf(ctx, &pdfProps, templateStoreAdapter)
 	if err != nil {
 		return fmt.Errorf("failed to generate pdf: %v", err)
 	}
-	defer pdf.Close()
 
 	duration := time.Since(startTime)
-	fmt.Println("pdf stream received at :: ", duration)
+	svcUtils.Logger.Info(ctx, "pdf bytes received :: ", map[string]any{"duration": duration})
 
 	duration = time.Since(startTime)
 
@@ -102,16 +102,18 @@ func GeneratePDF(ctx context.Context, req *PDFDto, templateStoreAdapter *templat
 			return fmt.Errorf("failed to load signing credentials: %v", credErr)
 		}
 
-		signedPDF, err := signer.SignPdfStream(ctx, pdf, credentials.Certificate, credentials.PrivateKey)
+		pdfReader := bytes.NewReader(pdfBytes)
+		signedPDF, err := signer.SignPdfStream(ctx, pdfReader, credentials.Certificate, credentials.PrivateKey)
 		if err != nil {
 			return fmt.Errorf("failed to sign pdf using SignPdfStream: %v", err)
 		}
 
 		pdfReader = bytes.NewReader(signedPDF)
 	} else {
-		pdfReader = pdf
+		pdfReader = bytes.NewReader(pdfBytes)
 	}
-	fmt.Println("starting upload :: ", duration)
+	svcUtils.Logger.Info(ctx, "starting upload :: ", map[string]any{"duration": duration})
+
 	// Use the storage adapter to store the PDF
 	docReq := &templatestore.PostDocumentRequest{
 		FilePath:   req.OutputTemplatePath,
@@ -127,7 +129,7 @@ func GeneratePDF(ctx context.Context, req *PDFDto, templateStoreAdapter *templat
 	}
 
 	duration = time.Since(startTime)
-	fmt.Println("uploaded to storage at :: ", duration)
+	svcUtils.Logger.Info(ctx, "uploaded to storage :: ", map[string]any{"duration": duration})
 
 	return nil
 }
@@ -192,7 +194,8 @@ func getViewPort(viewPort *ViewportConfig) *browser_manager.ViewportConfig {
 func SignPDF(ctx context.Context, req *SignPDFDto, fileStoreAdapter *templatestore.StorageAdapter) error {
 
 	reqId := req.ReqId
-	fmt.Println("SignPDF called, req id :: ", reqId)
+	svcUtils.Logger.Info(ctx, "SignPDF called ", map[string]any{"req id": reqId})
+
 	// get input file stream
 	freader, err := (*fileStoreAdapter).GetDocument(ctx, &templatestore.GetDocumentRequest{
 		FilePath:       req.InputFilePath,

@@ -4,15 +4,16 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
 	"text/template"
 	"time"
 
 	"github.com/Zomato/espresso/lib/browser_manager"
+	log "github.com/Zomato/espresso/lib/logger"
 	"github.com/Zomato/espresso/lib/templatestore"
-	"github.com/go-rod/rod"
 )
 
-func GetHtmlPdf(ctx context.Context, params *GetHtmlPdfInput, storeAdapter *templatestore.StorageAdapter) (*rod.StreamReader, error) {
+func GetHtmlPdf(ctx context.Context, params *GetHtmlPdfInput, storeAdapter *templatestore.StorageAdapter) ([]byte, error) {
 
 	startTime := time.Now()
 	if params == nil {
@@ -20,7 +21,9 @@ func GetHtmlPdf(ctx context.Context, params *GetHtmlPdfInput, storeAdapter *temp
 	}
 
 	duration := time.Since(startTime)
-	fmt.Println("starting template parsing at :: ", duration)
+
+	log.Logger.Info(ctx, "starting template parsing at", map[string]any{"duration": duration})
+
 	var err error
 	var templateFile *template.Template
 	if storeAdapter != nil {
@@ -40,7 +43,7 @@ func GetHtmlPdf(ctx context.Context, params *GetHtmlPdfInput, storeAdapter *temp
 	}
 
 	duration = time.Since(startTime)
-	fmt.Println("starting unmarshaling data at :: ", duration)
+	log.Logger.Info(ctx, "starting unmarshaling data at", map[string]any{"duration": duration})
 
 	data := params.Data
 
@@ -57,16 +60,16 @@ func GetHtmlPdf(ctx context.Context, params *GetHtmlPdfInput, storeAdapter *temp
 	page := browser_manager.GetTab()
 	defer func() {
 		duration = time.Since(startTime)
-		fmt.Println("closing tab at :: ", duration)
+		log.Logger.Info(ctx, "closing tab at", map[string]any{"duration": duration})
 		browser_manager.ReleaseTab(page)
 	}()
 
 	duration = time.Since(startTime)
-	fmt.Println("prefetching images at :: ", duration)
+	log.Logger.Info(ctx, "prefetching images at", map[string]any{"duration": duration})
 	unmarshaledData = PrefetchImages(ctx, unmarshaledData)
 
 	duration = time.Since(startTime)
-	fmt.Println("unmarshaled data & started template execution at :: ", duration)
+	log.Logger.Info(ctx, "unmarshaled data & started template execution at", map[string]any{"duration": duration})
 
 	htmlContent, err := ExecuteTemplate(ctx, templateFile, unmarshaledData)
 	if err != nil {
@@ -76,7 +79,7 @@ func GetHtmlPdf(ctx context.Context, params *GetHtmlPdfInput, storeAdapter *temp
 	htmlContent = AddImagesFromMetaData(ctx, htmlContent, unmarshaledData)
 
 	duration = time.Since(startTime)
-	fmt.Println("template executed and requesting new tab at :: ", duration)
+	log.Logger.Info(ctx, "template executed and requesting new tab at", map[string]any{"duration": duration})
 
 	if params.IsSinglePage {
 		page.MustSetViewport(794, 1124, 1.0, false)
@@ -86,7 +89,7 @@ func GetHtmlPdf(ctx context.Context, params *GetHtmlPdfInput, storeAdapter *temp
 	}
 
 	duration = time.Since(startTime)
-	fmt.Println("rendering data in new tab at :: ", duration)
+	log.Logger.Info(ctx, "rendering data in new tab at", map[string]any{"duration": duration})
 
 	err = page.SetDocumentContent(string(htmlContent))
 	if err != nil {
@@ -120,7 +123,7 @@ func GetHtmlPdf(ctx context.Context, params *GetHtmlPdfInput, storeAdapter *temp
 	}
 
 	duration = time.Since(startTime)
-	fmt.Println("generating pdf at :: ", duration)
+	log.Logger.Info(ctx, "generating pdf at", map[string]any{"duration": duration})
 
 	pdfStream, err := page.PDF(pdfParams)
 	if err != nil {
@@ -128,9 +131,23 @@ func GetHtmlPdf(ctx context.Context, params *GetHtmlPdfInput, storeAdapter *temp
 	}
 
 	duration = time.Since(startTime)
-	fmt.Println("pdf generated at :: ", duration)
+	log.Logger.Info(ctx, "reading pdf stream at", map[string]any{"duration": duration})
 
-	return pdfStream, nil
+	// Read the stream fully BEFORE releasing the tab to prevent memory leak
+	pdfBytes, err := io.ReadAll(pdfStream)
+	if err != nil {
+		return nil, fmt.Errorf("unable to read pdf stream: %v", err)
+	}
+
+	// Close the stream while the page is still alive to properly cleanup Chrome's IO handle
+	if closeErr := pdfStream.Close(); closeErr != nil {
+		log.Logger.Error(ctx, "failed to close pdf stream", closeErr, nil)
+	}
+
+	duration = time.Since(startTime)
+	log.Logger.Info(ctx, "pdf generated at", map[string]any{"duration": duration})
+
+	return pdfBytes, nil
 }
 
 func getMetaInfo(data map[string]interface{}) map[string]interface{} {

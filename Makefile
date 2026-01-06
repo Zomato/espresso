@@ -1,5 +1,8 @@
 .PHONY: build run dev clean help
 
+
+DOCKER_COMPOSE_CMD := $(shell if command -v docker-compose >/dev/null 2>&1; then echo "docker-compose"; else echo "docker compose"; fi)
+
 # Default target when just running 'make'
 all: dev
 
@@ -37,8 +40,8 @@ init:
 
 dev:
 	DOCKERFILE=service/Dockerfile \
-    docker-compose -f service/docker-compose.yml build && \
-    docker-compose -f service/docker-compose.yml up -d && \
+    $(DOCKER_COMPOSE_CMD) -f service/docker-compose.yml build && \
+    $(DOCKER_COMPOSE_CMD) -f service/docker-compose.yml up -d && \
 	open http://localhost:3000
 
 test-lib:
@@ -54,7 +57,7 @@ test: test-service test-lib
 
 # Clean up
 clean:
-	docker-compose -f service/docker-compose.yml down
+	$(DOCKER_COMPOSE_CMD) -f service/docker-compose.yml down
 	docker rmi -f docker.io/library/service-espresso-ui docker.io/localstack/localstack docker.io/library/service-espresso
 
 
