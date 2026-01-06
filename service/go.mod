@@ -2,6 +2,8 @@ module github.com/Zomato/espresso/service
 
 go 1.23.0
 
+replace github.com/Zomato/espresso/lib => ../lib
+
 require (
 	github.com/Zomato/espresso/lib v0.0.0-20250523093533-6d517dcb5c35
 	github.com/go-rod/rod v0.116.2

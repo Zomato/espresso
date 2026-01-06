@@ -4,16 +4,16 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
 	"text/template"
 	"time"
 
 	"github.com/Zomato/espresso/lib/browser_manager"
 	log "github.com/Zomato/espresso/lib/logger"
 	"github.com/Zomato/espresso/lib/templatestore"
-	"github.com/go-rod/rod"
 )
 
-func GetHtmlPdf(ctx context.Context, params *GetHtmlPdfInput, storeAdapter *templatestore.StorageAdapter) (*rod.StreamReader, error) {
+func GetHtmlPdf(ctx context.Context, params *GetHtmlPdfInput, storeAdapter *templatestore.StorageAdapter) ([]byte, error) {
 
 	startTime := time.Now()
 	if params == nil {
@@ -131,9 +131,23 @@ func GetHtmlPdf(ctx context.Context, params *GetHtmlPdfInput, storeAdapter *temp
 	}
 
 	duration = time.Since(startTime)
+	log.Logger.Info(ctx, "reading pdf stream at", map[string]any{"duration": duration})
+
+	// Read the stream fully BEFORE releasing the tab to prevent memory leak
+	pdfBytes, err := io.ReadAll(pdfStream)
+	if err != nil {
+		return nil, fmt.Errorf("unable to read pdf stream: %v", err)
+	}
+
+	// Close the stream while the page is still alive to properly cleanup Chrome's IO handle
+	if closeErr := pdfStream.Close(); closeErr != nil {
+		log.Logger.Error(ctx, "failed to close pdf stream", closeErr, nil)
+	}
+
+	duration = time.Since(startTime)
 	log.Logger.Info(ctx, "pdf generated at", map[string]any{"duration": duration})
 
-	return pdfStream, nil
+	return pdfBytes, nil
 }
 
 func getMetaInfo(data map[string]interface{}) map[string]interface{} {

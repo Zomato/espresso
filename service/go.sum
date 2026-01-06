@@ -1,7 +1,5 @@
 filippo.io/edwards25519 v1.1.0 h1:FNf4tywRC1HmFuKW5xopWpigGjJKiJSV0Cqo0cJWDaA=
 filippo.io/edwards25519 v1.1.0/go.mod h1:BxyFTGdWcka3PhytdK4V28tE5sGfRvvvRV7EaN4VDT4=
-github.com/Zomato/espresso/lib v0.0.0-20250523093533-6d517dcb5c35 h1:yUnWMSPSdE2H5iYDTtHa+7GM4Fxr3Mg2kI7jOccpV4U=
-github.com/Zomato/espresso/lib v0.0.0-20250523093533-6d517dcb5c35/go.mod h1:o0+auwulxtNbT0oZAf+f/BIVxZ0iG8dmCRK/LXKoKls=
 github.com/aws/aws-sdk-go-v2 v1.36.3 h1:mJoei2CxPutQVxaATCzDUjcZEjVRdpsiiXi2o38yqWM=
 github.com/aws/aws-sdk-go-v2 v1.36.3/go.mod h1:LLXuLpgzEbD766Z5ECcRmi8AzSwfZItDtmABVkRLGzg=
 github.com/aws/aws-sdk-go-v2/aws/protocol/eventstream v1.6.10 h1:zAybnyUQXIZ5mok5Jqwlf58/TFE7uvd3IAsa1aF9cXs=
