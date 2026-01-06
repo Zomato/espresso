@@ -78,20 +78,18 @@ func TestGetHtmlPdf(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			pdf, err := GetHtmlPdf(ctx, tt.input, nil)
+			pdfBytes, err := GetHtmlPdf(ctx, tt.input, nil)
 			if tt.wantErr {
 				assert.Error(t, err)
 				return
 			}
 			assert.NoError(t, err)
-			assert.NotNil(t, pdf)
-			defer pdf.Close()
+			assert.NotNil(t, pdfBytes)
+			assert.True(t, len(pdfBytes) > 0, "PDF should not be empty")
 
-			// Read first few bytes to verify it's a PDF
-			buf := make([]byte, 4)
-			_, err = pdf.Read(buf)
-			assert.NoError(t, err)
-			assert.Equal(t, []byte("%PDF"), buf)
+			// Verify first few bytes to confirm it's a PDF
+			assert.True(t, len(pdfBytes) >= 4, "PDF should be at least 4 bytes")
+			assert.Equal(t, []byte("%PDF"), pdfBytes[:4])
 		})
 	}
 }

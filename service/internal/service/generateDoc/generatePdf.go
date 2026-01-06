@@ -85,14 +85,13 @@ func GeneratePDF(ctx context.Context, req *PDFDto, templateStoreAdapter *templat
 		IsSinglePage: pdfParams.IsSinglePage,
 	}
 
-	pdf, err := renderer.GetHtmlPdf(ctx, &pdfProps, templateStoreAdapter)
+	pdfBytes, err := renderer.GetHtmlPdf(ctx, &pdfProps, templateStoreAdapter)
 	if err != nil {
 		return fmt.Errorf("failed to generate pdf: %v", err)
 	}
-	defer pdf.Close()
 
 	duration := time.Since(startTime)
-	svcUtils.Logger.Info(ctx, "pdf stream received :: ", map[string]any{"duration": duration})
+	svcUtils.Logger.Info(ctx, "pdf bytes received :: ", map[string]any{"duration": duration})
 
 	duration = time.Since(startTime)
 
@@ -103,14 +102,15 @@ func GeneratePDF(ctx context.Context, req *PDFDto, templateStoreAdapter *templat
 			return fmt.Errorf("failed to load signing credentials: %v", credErr)
 		}
 
-		signedPDF, err := signer.SignPdfStream(ctx, pdf, credentials.Certificate, credentials.PrivateKey)
+		pdfReader := bytes.NewReader(pdfBytes)
+		signedPDF, err := signer.SignPdfStream(ctx, pdfReader, credentials.Certificate, credentials.PrivateKey)
 		if err != nil {
 			return fmt.Errorf("failed to sign pdf using SignPdfStream: %v", err)
 		}
 
 		pdfReader = bytes.NewReader(signedPDF)
 	} else {
-		pdfReader = pdf
+		pdfReader = bytes.NewReader(pdfBytes)
 	}
 	svcUtils.Logger.Info(ctx, "starting upload :: ", map[string]any{"duration": duration})
 
