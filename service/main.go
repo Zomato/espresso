@@ -2,16 +2,17 @@ package main
 
 import (
 	"context"
-	"fmt"
 	"log"
 	"net/http"
 	"time"
 
 	"github.com/Zomato/espresso/lib/browser_manager"
 
+	logger "github.com/Zomato/espresso/lib/logger"
 	"github.com/Zomato/espresso/lib/workerpool"
 	"github.com/Zomato/espresso/service/controller/pdf_generation"
 	"github.com/Zomato/espresso/service/internal/pkg/viperpkg"
+	"github.com/Zomato/espresso/service/utils"
 	"github.com/spf13/viper"
 )
 
@@ -20,8 +21,15 @@ func main() {
 
 	viperpkg.InitConfig()
 
-	log.Printf("Template storage type: %s", viper.GetString("template_storage.storage_type"))
-	log.Printf("File storage type: %s", viper.GetString("file_storage.storage_type"))
+	// Replace ZeroLog with any logging library by implementing ILogger interface.
+	zeroLog := utils.NewZeroLogger()
+	logger.Initialize(zeroLog)
+
+	templateStorageType := viper.GetString("template_storage.storage_type")
+	zeroLog.Info(ctx, "Template storage type ", map[string]any{"type": templateStorageType})
+
+	fileStorageType := viper.GetString("file_storage.storage_type")
+	zeroLog.Info(ctx, "File storage type ", map[string]any{"type": fileStorageType})
 
 	tabpool := viper.GetInt("browser.tab_pool")
 	if err := browser_manager.Init(ctx, tabpool); err != nil {
@@ -47,7 +55,7 @@ func main() {
 
 	// your implementation
 
-	fmt.Println("Server terminated")
+	zeroLog.Info(ctx, "Server terminated", nil)
 }
 
 func initializeWorkerPool(workerCount int, workerTimeout int) {

@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"sync"
 
+	log "github.com/Zomato/espresso/lib/logger"
 	"github.com/go-rod/rod"
 )
 
@@ -25,7 +26,8 @@ func InitializeTabManager(ctx context.Context, tabPool int) {
 }
 
 func NewTabPool(ctx context.Context, browser *rod.Browser, tabPool int) *TabPool {
-	fmt.Println("Initializing tab pool with ", tabPool, " tabs")
+	log.Logger.Info(ctx, "Initializing tab pool", map[string]any{"totalTabs": tabPool})
+
 	numTabs = tabPool
 	if tabPool == 0 {
 		return nil
@@ -48,7 +50,7 @@ func NewTabPool(ctx context.Context, browser *rod.Browser, tabPool int) *TabPool
 
 // if the `browser.tabs` is 0 then we are creating a new tab on each request
 func GetTab() *rod.Page {
-	fmt.Println("Getting tab")
+	log.Logger.Info(context.Background(), "Getting tab", nil)
 	if numTabs == 0 {
 		return Browser.MustPage("about:blank")
 	}
@@ -58,14 +60,15 @@ func GetTab() *rod.Page {
 }
 
 func ReleaseTab(page *rod.Page) {
-	fmt.Println("Releasing tab")
+	log.Logger.Info(context.Background(), "Releasing Tab", nil)
 	if numTabs == 0 {
 		page.MustClose()
 		return
 	}
 	err := page.SetDocumentContent("")
 	if err != nil {
-		fmt.Println("Error releasing tab", err)
+		log.Logger.Error(context.Background(), "Error releasing tab", err, nil)
+
 		panic(err)
 	}
 
@@ -77,7 +80,7 @@ func ClearAllBlobs(page *rod.Page, dynaminData map[string]interface{}) {
 		strValue, ok := value.(string)
 		if ok && strValue != "" {
 			if err := removeBlobURL(page, strValue); err != nil {
-				fmt.Println("Error clearing blob URL", err)
+				log.Logger.Error(context.Background(), "Error clearing blob URL", err, nil)
 				panic(err)
 			}
 		}
