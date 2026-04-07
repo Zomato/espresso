@@ -26,6 +26,7 @@ type ILogger interface {
 	Warn(ctx context.Context, msg string, fields Fields)
 	Error(ctx context.Context, msg string, err error, fields Fields)
 	Debug(ctx context.Context, msg string, fields Fields)
+	Enabled() bool
 }
 
 func Initialize(loggerInstance ILogger) {

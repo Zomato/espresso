@@ -11,7 +11,8 @@ import (
 )
 
 type ZeroLog struct {
-	logger zerolog.Logger
+	logger  zerolog.Logger
+	enabled bool
 }
 
 var (
@@ -26,8 +27,12 @@ func NewZeroLogger() ZeroLog {
 
 	zerolog.SetGlobalLevel(zerolog.DebugLevel)
 
+	// Check if logging is disabled via environment variable
+	enabled := os.Getenv("DISABLE_LOGGING") != "true"
+
 	zeroLog := ZeroLog{
-		logger: log.Logger,
+		logger:  log.Logger,
+		enabled: enabled,
 	}
 
 	Logger = zeroLog
@@ -44,17 +49,29 @@ func addFields(event *zerolog.Event, fields map[string]any) *zerolog.Event {
 }
 
 func (l ZeroLog) Info(ctx context.Context, msg string, fields customLogger.Fields) {
-	addFields(l.logger.Info(), fields).Msg(msg)
+	if l.enabled {
+		addFields(l.logger.Info(), fields).Msg(msg)
+	}
 }
 
 func (l ZeroLog) Warn(ctx context.Context, msg string, fields customLogger.Fields) {
-	addFields(l.logger.Warn(), fields).Msg(msg)
+	if l.enabled {
+		addFields(l.logger.Warn(), fields).Msg(msg)
+	}
 }
 
 func (l ZeroLog) Error(ctx context.Context, msg string, err error, fields customLogger.Fields) {
-	addFields(l.logger.Err(err), fields).Msg(msg)
+	if l.enabled {
+		addFields(l.logger.Err(err), fields).Msg(msg)
+	}
 }
 
 func (l ZeroLog) Debug(ctx context.Context, msg string, fields customLogger.Fields) {
-	addFields(l.logger.Debug(), fields).Msg(msg)
+	if l.enabled {
+		addFields(l.logger.Debug(), fields).Msg(msg)
+	}
+}
+
+func (l ZeroLog) Enabled() bool {
+	return l.enabled
 }
