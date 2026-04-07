@@ -10,11 +10,14 @@ RUN mkdir -p /app/espresso/configs \
 
 # Configure Go to bypass proxy for private repositories
 # Set ENABLE_UI to false to disable the UI
-ENV GOSUMDB=off \
+ENV GOMODCACHE=/home/chrome/.cache/go-mod \
+    GOCACHE=/home/chrome/.cache/go-build \
+    GOSUMDB=off \
     GO111MODULE=on \
     ROD_BROWSER_BIN=/usr/bin/chromium \
     ENABLE_UI=true
-    
+
+COPY lib/* ./lib
 
 # Copy go.mod and go.sum first to leverage Docker cache
 COPY service/go.mod service/go.sum ./service/

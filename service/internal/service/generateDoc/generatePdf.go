@@ -32,7 +32,9 @@ func GeneratePDF(ctx context.Context, req *PDFDto, templateStoreAdapter *templat
 	content := req.Content
 	viewPortConfig := req.ViewPort
 	pdfParams := req.PdfParams
-
+	if pdfParams == nil {
+		pdfParams = &PDFParams{}
+	}
 	viewPort := getViewPort(viewPortConfig)
 	// Start loading credentials in parallel if signing is enabled
 	var credWg sync.WaitGroup

@@ -21,6 +21,8 @@ func Init(ctx context.Context, tabPool int) error {
 		return fmt.Errorf("ROD_BROWSER_BIN environment variable not set")
 	}
 
+	userDataDir := fmt.Sprintf("/tmp/chrome-user-data-%d", os.Getpid())
+
 	launcher := launcher.New().Bin(browserPath).
 		Headless(true).
 		Set("--disable-gpu").
@@ -36,7 +38,7 @@ func Init(ctx context.Context, tabPool int) error {
 		Set("--disable-sync").
 		Set("--metrics-recording-only").
 		Set("--mute-audio").
-		Set("--user-data-dir", "/tmp/chrome-user-data").
+		Set("--user-data-dir", userDataDir).
 		Set("--disable-web-security").
 		Set("--no-startup-window").
 		Set("--disable-renderer-backgrounding"). // Prevent background throttling
@@ -61,7 +63,7 @@ func Init(ctx context.Context, tabPool int) error {
 		Set("--disable-cache").
 		Set("--disable-prompt-on-repost").
 		Set("--disable-domain-reliability").
-		Set("--disable-features", "NetworkService,OutOfBlinkCors,InterestGroupStorage,UserAgentClientHint").
+		Set("--disable-features", "OutOfBlinkCors,InterestGroupStorage,UserAgentClientHint").
 		Set("--disable-extensions").
 		Set("--disable-component-extensions-with-background-pages").
 		Set("--blink-settings", "autoplayPolicy=document-user-activation-required").
