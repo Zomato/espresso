@@ -4,6 +4,12 @@ template_storage:
 file_storage:
   storage_type: "disk"
 
+mcp:
+  enabled: true
+  pdf_output_dir: "./output"
+  pdf_output_url_prefix: "http://localhost:8081/output"
+  pdf_output_path: "/output/"
+
 browser:
   tab_pool: 50
 
@@ -42,4 +48,4 @@ digital_certificates:
     key_password: "password2"
 
 mysql:
-  dsn: "pdf_user:pdf_password@tcp(mysql:3306)/pdf_templates?parseTime=true"
+  dsn: "pdf_user:pdf_password@tcp(localhost:3308)/pdf_templates?parseTime=true"

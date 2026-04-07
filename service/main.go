@@ -10,33 +10,32 @@ import (
 
 	logger "github.com/Zomato/espresso/lib/logger"
 	"github.com/Zomato/espresso/lib/workerpool"
-	"github.com/Zomato/espresso/service/controller/pdf_generation"
-	"github.com/Zomato/espresso/service/internal/pkg/viperpkg"
+	"github.com/Zomato/espresso/service/pkg/config"
+	"github.com/Zomato/espresso/service/server"
 	"github.com/Zomato/espresso/service/utils"
-	"github.com/spf13/viper"
 )
 
 func main() {
 	ctx := context.Background()
 
-	viperpkg.InitConfig()
-
+	config.InitConfig()
+	cfg := config.GetConfig()
 	// Replace ZeroLog with any logging library by implementing ILogger interface.
 	zeroLog := utils.NewZeroLogger()
 	logger.Initialize(zeroLog)
 
-	templateStorageType := viper.GetString("template_storage.storage_type")
+	templateStorageType := cfg.TemplateStorage.StorageType
 	zeroLog.Info(ctx, "Template storage type ", map[string]any{"type": templateStorageType})
 
-	fileStorageType := viper.GetString("file_storage.storage_type")
+	fileStorageType := cfg.FileStorage.StorageType
 	zeroLog.Info(ctx, "File storage type ", map[string]any{"type": fileStorageType})
 
-	tabpool := viper.GetInt("browser.tab_pool")
+	tabpool := cfg.Browser.TabPool
 	if err := browser_manager.Init(ctx, tabpool); err != nil {
 		log.Fatalf("Failed to initialize browser: %v", err)
 	}
-	workerCount := viper.GetInt("workerpool.worker_count")
-	workerTimeout := viper.GetInt("workerpool.worker_timeout")
+	workerCount := cfg.WorkerPool.WorkerCount
+	workerTimeout := cfg.WorkerPool.WorkerTimeout
 
 	initializeWorkerPool(workerCount, workerTimeout)
 
@@ -44,7 +43,11 @@ func main() {
 	// Create a new ServeMux
 	mux := http.NewServeMux()
 
-	pdf_generation.Register(mux)
+	server.RegisterHTTP(mux)
+	if cfg.MCP.Enabled {
+		zeroLog.Info(ctx, "MCP is enabled. Initializing MCP components...", nil)
+		server.RegisterMCP(mux)
+	}
 	// Wrap the entire mux with the CORS middleware
 	corsHandler := enableCORS(mux)
 
