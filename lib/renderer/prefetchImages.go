@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/url"
+	"regexp"
 	"runtime/debug"
 	"strings"
 	"sync"
@@ -14,6 +16,30 @@ import (
 	log "github.com/Zomato/espresso/lib/logger"
 	"github.com/Zomato/espresso/lib/workerpool"
 )
+
+var (
+	imageExtURLRegex = regexp.MustCompile(`(?i)\.(png|jpe?g|gif|webp|bmp|svg|tiff?)(\?.*)?$`)
+	subdomainRegex   = regexp.MustCompile(`^[a-zA-Z0-9]+$`)
+
+	allowedDomainsMu sync.RWMutex
+	allowedDomains   []string
+)
+
+// SetAllowedImageDomains configures the allowlist of hosts (and their
+// single-label subdomains) that PrefetchImages is permitted to fetch from.
+// Callers are expected to invoke this during startup
+// using values sourced from their own config system.
+func SetAllowedImageDomains(domains []string) {
+	allowedDomainsMu.Lock()
+	defer allowedDomainsMu.Unlock()
+	allowedDomains = append(allowedDomains[:0:0], domains...)
+}
+
+func getAllowedImageDomains() []string {
+	allowedDomainsMu.RLock()
+	defer allowedDomainsMu.RUnlock()
+	return allowedDomains
+}
 
 type stackItem struct {
 	key  string
@@ -26,6 +52,10 @@ func PrefetchImages(ctx context.Context, data map[string]interface{}) map[string
 	startTime := time.Now()
 	var wg sync.WaitGroup
 	var mu sync.Mutex // to add lock on updating the json data
+
+	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
+	errChan := make(chan error, 1)
 
 	stack := []stackItem{{key: "", data: data}}
 
@@ -49,6 +79,23 @@ func PrefetchImages(ctx context.Context, data map[string]interface{}) map[string
 							log.Logger.Info(ctx, "recovered from panic", map[string]any{"error": err})
 						}
 					}()
+
+					allowed, reason := IsURLAllowed(ctx, v)
+					if !allowed {
+						if !imageExtURLRegex.MatchString(v) {
+							log.Logger.Info(ctx, "URL not allowed and has non-image extension", map[string]any{"url": v, "reason": reason})
+							return
+						}
+						err := fmt.Errorf("image URL not allowed: %s. Reason: %s", v, reason)
+						log.Logger.Error(ctx, "error while prefetching images", err, map[string]any{"url": v})
+						select {
+						case errChan <- err:
+							cancel()
+						default:
+						}
+						return
+					}
+
 					var dataURI string
 					var err error
 					if strings.HasPrefix(v, "https://") {
@@ -143,4 +190,38 @@ func fetchImageAsDataURIFromURL(url string) (string, error) {
 	duration = time.Since(startTime)
 	log.Logger.Info(context.Background(), "returning image at", map[string]any{"duration": duration, "url": url})
 	return dataURI, nil
+}
+
+// IsURLAllowed checks whether a URL is permitted for prefetching based on
+// the allowlist configured at "prefetch_images.allowed_domains".
+func IsURLAllowed(ctx context.Context, urlStr string) (bool, string) {
+	if !strings.HasPrefix(urlStr, "https://") {
+		return false, "URL does not start with https://"
+	}
+
+	parsedURL, err := url.Parse(urlStr)
+	if err != nil {
+		return false, fmt.Sprintf("invalid URL format: %v", err)
+	}
+
+	parsedHost := strings.ToLower(parsedURL.Host)
+	allowedDomains := getAllowedImageDomains()
+	for _, domain := range allowedDomains {
+		domain = strings.ToLower(domain)
+		if parsedHost == domain {
+			return true, ""
+		}
+
+		if strings.HasSuffix(parsedHost, "."+domain) {
+			subdomainPart := strings.TrimSuffix(parsedHost, "."+domain)
+			if subdomainPart != "" &&
+				!strings.Contains(subdomainPart, ".") &&
+				!strings.Contains(subdomainPart, "-") &&
+				subdomainRegex.MatchString(subdomainPart) {
+				return true, ""
+			}
+		}
+	}
+
+	return false, fmt.Sprintf("domain not in whitelist: %s", parsedURL.Host)
 }

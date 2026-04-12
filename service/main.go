@@ -9,6 +9,7 @@ import (
 	"github.com/Zomato/espresso/lib/browser_manager"
 
 	logger "github.com/Zomato/espresso/lib/logger"
+	"github.com/Zomato/espresso/lib/renderer"
 	"github.com/Zomato/espresso/lib/workerpool"
 	"github.com/Zomato/espresso/service/controller/pdf_generation"
 	"github.com/Zomato/espresso/service/internal/pkg/viperpkg"
@@ -30,6 +31,8 @@ func main() {
 
 	fileStorageType := viper.GetString("file_storage.storage_type")
 	zeroLog.Info(ctx, "File storage type ", map[string]any{"type": fileStorageType})
+
+	renderer.SetAllowedImageDomains(viper.GetStringSlice("prefetch_images.allowed_domains"))
 
 	tabpool := viper.GetInt("browser.tab_pool")
 	if err := browser_manager.Init(ctx, tabpool); err != nil {

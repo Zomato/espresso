@@ -26,6 +26,9 @@ func TestGetHtmlPdf(t *testing.T) {
 		)*time.Millisecond,
 	)
 
+	SetAllowedImageDomains([]string{"cdn-icons-png.flaticon.com"})
+	t.Cleanup(func() { SetAllowedImageDomains(nil) })
+
 	tests := []struct {
 		name        string
 		input       *GetHtmlPdfInput
@@ -36,9 +39,9 @@ func TestGetHtmlPdf(t *testing.T) {
 			name: "basic_template",
 			input: &GetHtmlPdfInput{
 				TemplateRequest: templatestore.GetTemplateRequest{
-					TemplateBytes: []byte(`<html><body><h1>{{.title}}</h1></body></html>`),
+					TemplateBytes: []byte(`<html><body><h1>{{.title}}</h1><img src="{{.logo}}"/></body></html>`),
 				},
-				Data: []byte(`{"title":"Test Document"}`),
+				Data: []byte(`{"title":"Test Document","logo":"https://cdn-icons-png.flaticon.com/512/3135/3135715.png"}`),
 				ViewPort: &browser_manager.ViewportConfig{
 					Width:             794,
 					Height:            1124,

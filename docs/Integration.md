@@ -97,8 +97,19 @@ func main() {
         workerCount,
         time.Duration(workerTimeout) * time.Millisecond,
     )
+
+    // Allowlist hosts for https:// image prefetching. Without this, every
+    // https image URL in template data is rejected (SSRF guard).
+    // Matches exact host or single-label alphanumeric subdomain
+    // (e.g. "example.com" allows "cdn.example.com" but not "a.b.example.com").
+    renderer.SetAllowedImageDomains([]string{
+        "b.zmtcdn.com",
+        "cdn-icons-png.flaticon.com",
+    })
 }
 ```
+
+The bundled example service reads this list from `prefetch_images.allowed_domains` in [service/configs/espressoconfig.yaml](../service/configs/espressoconfig.yaml) and forwards it to `renderer.SetAllowedImageDomains` at startup — the quick-start sample templates work out of the box. Disallowed URLs with an image extension fail the render; other disallowed strings are skipped with a warning.
 
 ### 2. PDF Generation
 
