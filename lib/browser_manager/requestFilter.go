@@ -10,7 +10,7 @@ import (
 
 func isLocalScheme(s string) bool {
 	switch s {
-	case "data", "blob", "about", "chrome", "chrome-extension", "devtools", "file":
+	case "data", "blob", "about":
 		return true
 	}
 	return false
