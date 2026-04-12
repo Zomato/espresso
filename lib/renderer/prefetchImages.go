@@ -193,7 +193,7 @@ func fetchImageAsDataURIFromURL(url string) (string, error) {
 }
 
 // IsURLAllowed checks whether a URL is permitted for prefetching based on
-// the allowlist configured at "prefetch_images.allowed_domains".
+// the allowlist configured using renderer.SetAllowedImageDomains
 func IsURLAllowed(ctx context.Context, urlStr string) (bool, string) {
 	if !strings.HasPrefix(urlStr, "https://") {
 		return false, "URL does not start with https://"
