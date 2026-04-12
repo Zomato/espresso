@@ -154,16 +154,7 @@ func PrefetchImages(ctx context.Context, data map[string]interface{}) map[string
 
 var imageFetchClient = &http.Client{
 	CheckRedirect: func(req *http.Request, via []*http.Request) error {
-		if len(via) >= 3 {
-			return fmt.Errorf("too many redirects")
-		}
-		if req.URL.Scheme != "https" {
-			return fmt.Errorf("redirect to non-https scheme: %s", req.URL.Scheme)
-		}
-		if ok, reason := IsURLAllowed(req.Context(), req.URL.String()); !ok {
-			return fmt.Errorf("redirect to disallowed URL %s: %s", req.URL, reason)
-		}
-		return nil
+		return http.ErrUseLastResponse
 	},
 }
 
