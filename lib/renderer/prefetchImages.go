@@ -12,8 +12,8 @@ import (
 	"sync"
 	"time"
 
-	log "github.com/Zomato/espresso/lib/logger"
 	"github.com/Zomato/espresso/lib/browser_manager"
+	log "github.com/Zomato/espresso/lib/logger"
 	"github.com/Zomato/espresso/lib/workerpool"
 )
 
@@ -60,6 +60,12 @@ func PrefetchImages(ctx context.Context, data map[string]interface{}) map[string
 
 					allowed, reason := browser_manager.IsURLAllowed(v)
 					if !allowed {
+						// Drop the disallowed URL from the template data so it
+						// never reaches the rendered HTML
+						mu.Lock()
+						delete(parentData, k)
+						mu.Unlock()
+
 						if !imageExtURLRegex.MatchString(v) {
 							log.Logger.Info(ctx, "URL not allowed and has non-image extension", map[string]any{"url": v, "reason": reason})
 							return
@@ -175,4 +181,3 @@ func fetchImageAsDataURIFromURL(url string) (string, error) {
 	log.Logger.Info(context.Background(), "returning image at", map[string]any{"duration": duration, "url": url})
 	return dataURI, nil
 }
-
