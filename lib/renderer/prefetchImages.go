@@ -152,6 +152,21 @@ func PrefetchImages(ctx context.Context, data map[string]interface{}) map[string
 	return data
 }
 
+var imageFetchClient = &http.Client{
+	CheckRedirect: func(req *http.Request, via []*http.Request) error {
+		if len(via) >= 3 {
+			return fmt.Errorf("too many redirects")
+		}
+		if req.URL.Scheme != "https" {
+			return fmt.Errorf("redirect to non-https scheme: %s", req.URL.Scheme)
+		}
+		if ok, reason := IsURLAllowed(req.Context(), req.URL.String()); !ok {
+			return fmt.Errorf("redirect to disallowed URL %s: %s", req.URL, reason)
+		}
+		return nil
+	},
+}
+
 // Fetch an image and convert it to a data URI
 func fetchImageAsDataURIFromURL(url string) (string, error) {
 	startTime := time.Now()
@@ -159,7 +174,7 @@ func fetchImageAsDataURIFromURL(url string) (string, error) {
 	duration := time.Since(startTime)
 	log.Logger.Info(context.Background(), "fetching image at", map[string]any{"duration": duration, "url": url})
 
-	resp, err := http.Get(url)
+	resp, err := imageFetchClient.Get(url)
 	if err != nil {
 		return "", fmt.Errorf("failed to fetch image: %v", err)
 	}
