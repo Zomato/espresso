@@ -98,18 +98,24 @@ func main() {
         time.Duration(workerTimeout) * time.Millisecond,
     )
 
-    // Allowlist hosts for https:// image prefetching. Without this, every
-    // https image URL in template data is rejected (SSRF guard).
+    // Allowlist hosts for outbound requests during PDF generation. Without
+    // this, every https URL in template data AND every network request the
+    // headless browser attempts while rendering the page is rejected.
     // Matches exact host or single-label alphanumeric subdomain
     // (e.g. "example.com" allows "cdn.example.com" but not "a.b.example.com").
-    renderer.SetAllowedImageDomains([]string{
+    browser_manager.SetAllowedDomains([]string{
         "b.zmtcdn.com",
         "cdn-icons-png.flaticon.com",
     })
 }
 ```
 
-The bundled example service reads this list from `prefetch_images.allowed_domains` in [service/configs/espressoconfig.yaml](../service/configs/espressoconfig.yaml) and forwards it to `renderer.SetAllowedImageDomains` at startup — the quick-start sample templates work out of the box. Disallowed URLs with an image extension fail the render; other disallowed strings are skipped with a warning.
+The allowlist is enforced at two layers:
+
+1. **Image prefetch** (`renderer.PrefetchImages`) — https image URLs in the template data payload are checked before fetching. Disallowed URLs with an image extension fail the render; other disallowed strings are skipped with a warning. HTTP redirects are blocked outright (the client uses `http.ErrUseLastResponse`), so a permitted host cannot redirect the fetcher to an internal address.
+2. **Browser rendering** (`lib/browser_manager` request hijacker) — a CDP hijack router is installed on every tab and blocks any outbound http(s) request whose host is not allowlisted. Local schemes (`data:`, `blob:`, `about:`, `chrome:`, `file:` …) are permitted so data-URI images and inline resources still work.
+
+The bundled example service reads this list from `prefetch_images.allowed_domains` in [service/configs/espressoconfig.yaml](../service/configs/espressoconfig.yaml) and calls `browser_manager.SetAllowedDomains` once at startup.
 
 ### 2. PDF Generation
 

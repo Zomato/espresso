@@ -26,8 +26,8 @@ func TestGetHtmlPdf(t *testing.T) {
 		)*time.Millisecond,
 	)
 
-	SetAllowedImageDomains([]string{"cdn-icons-png.flaticon.com"})
-	t.Cleanup(func() { SetAllowedImageDomains(nil) })
+	browser_manager.SetAllowedDomains([]string{"cdn-icons-png.flaticon.com"})
+	t.Cleanup(func() { browser_manager.SetAllowedDomains(nil) })
 
 	tests := []struct {
 		name        string
@@ -55,6 +55,31 @@ func TestGetHtmlPdf(t *testing.T) {
 			},
 			wantErr:     false,
 			description: "Should generate PDF from basic template",
+		},
+		{
+			name: "disallowed_domain_blocked_by_browser",
+			input: &GetHtmlPdfInput{
+				TemplateRequest: templatestore.GetTemplateRequest{
+					// URL embedded directly in HTML (not in data), so prefetch
+					// skips it and the browser is what actually attempts the
+					// fetch — the hijack router should block it and the PDF
+					// should still render successfully without the image.
+					TemplateBytes: []byte(`<html><body><h1>{{.title}}</h1><img src="https://evil.example.com/pixel.png"/></body></html>`),
+				},
+				Data: []byte(`{"title":"Blocked Image Test"}`),
+				ViewPort: &browser_manager.ViewportConfig{
+					Width:             794,
+					Height:            1124,
+					DeviceScaleFactor: 1.0,
+				},
+				PdfParams: &proto.PagePrintToPDF{
+					PrintBackground: true,
+					MarginTop:       float64Ptr(0.4),
+					MarginBottom:    float64Ptr(0.4),
+				},
+			},
+			wantErr:     false,
+			description: "Browser should block non-allowlisted domain but still render the PDF",
 		},
 		{
 			name: "invalid_template",
