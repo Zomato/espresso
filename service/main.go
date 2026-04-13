@@ -31,6 +31,8 @@ func main() {
 	fileStorageType := viper.GetString("file_storage.storage_type")
 	zeroLog.Info(ctx, "File storage type ", map[string]any{"type": fileStorageType})
 
+	browser_manager.SetAllowedDomains(viper.GetStringSlice("prefetch_images.allowed_domains"))
+
 	tabpool := viper.GetInt("browser.tab_pool")
 	if err := browser_manager.Init(ctx, tabpool); err != nil {
 		log.Fatalf("Failed to initialize browser: %v", err)
