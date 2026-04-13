@@ -43,3 +43,8 @@ digital_certificates:
 
 mysql:
   dsn: "pdf_user:pdf_password@tcp(mysql:3306)/pdf_templates?parseTime=true"
+prefetch_images:
+  allowed_domains:
+    - "b.zmtcdn.com"
+    - "www.shutterstock.com"
+    - "cdn-icons-png.flaticon.com"

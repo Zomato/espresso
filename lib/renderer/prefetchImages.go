@@ -6,14 +6,18 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"regexp"
 	"runtime/debug"
 	"strings"
 	"sync"
 	"time"
 
+	"github.com/Zomato/espresso/lib/browser_manager"
 	log "github.com/Zomato/espresso/lib/logger"
 	"github.com/Zomato/espresso/lib/workerpool"
 )
+
+var imageExtURLRegex = regexp.MustCompile(`(?i)\.(png|jpe?g|gif|webp|bmp|svg|tiff?)(\?.*)?$`)
 
 type stackItem struct {
 	key  string
@@ -26,6 +30,10 @@ func PrefetchImages(ctx context.Context, data map[string]interface{}) map[string
 	startTime := time.Now()
 	var wg sync.WaitGroup
 	var mu sync.Mutex // to add lock on updating the json data
+
+	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
+	errChan := make(chan error, 1)
 
 	stack := []stackItem{{key: "", data: data}}
 
@@ -49,6 +57,29 @@ func PrefetchImages(ctx context.Context, data map[string]interface{}) map[string
 							log.Logger.Info(ctx, "recovered from panic", map[string]any{"error": err})
 						}
 					}()
+
+					allowed, reason := browser_manager.IsURLAllowed(v)
+					if !allowed {
+						// Drop the disallowed URL from the template data so it
+						// never reaches the rendered HTML
+						mu.Lock()
+						delete(parentData, k)
+						mu.Unlock()
+
+						if !imageExtURLRegex.MatchString(v) {
+							log.Logger.Info(ctx, "URL not allowed and has non-image extension", map[string]any{"url": v, "reason": reason})
+							return
+						}
+						err := fmt.Errorf("image URL not allowed: %s. Reason: %s", v, reason)
+						log.Logger.Error(ctx, "error while prefetching images", err, map[string]any{"url": v})
+						select {
+						case errChan <- err:
+							cancel()
+						default:
+						}
+						return
+					}
+
 					var dataURI string
 					var err error
 					if strings.HasPrefix(v, "https://") {
@@ -105,6 +136,12 @@ func PrefetchImages(ctx context.Context, data map[string]interface{}) map[string
 	return data
 }
 
+var imageFetchClient = &http.Client{
+	CheckRedirect: func(req *http.Request, via []*http.Request) error {
+		return http.ErrUseLastResponse
+	},
+}
+
 // Fetch an image and convert it to a data URI
 func fetchImageAsDataURIFromURL(url string) (string, error) {
 	startTime := time.Now()
@@ -112,7 +149,7 @@ func fetchImageAsDataURIFromURL(url string) (string, error) {
 	duration := time.Since(startTime)
 	log.Logger.Info(context.Background(), "fetching image at", map[string]any{"duration": duration, "url": url})
 
-	resp, err := http.Get(url)
+	resp, err := imageFetchClient.Get(url)
 	if err != nil {
 		return "", fmt.Errorf("failed to fetch image: %v", err)
 	}
