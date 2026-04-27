@@ -26,6 +26,13 @@ type ILogger interface {
 	Warn(ctx context.Context, msg string, fields Fields)
 	Error(ctx context.Context, msg string, err error, fields Fields)
 	Debug(ctx context.Context, msg string, fields Fields)
+
+	// Enabled reports whether logging is active.
+	// Use to short-circuit expensive log-arg construction:
+	//
+	//	if logger.Enabled() {
+	//	    logger.Info(ctx, expensiveFunc(), fields)
+	//	}
 	Enabled() bool
 }
 
