@@ -97,8 +97,25 @@ func main() {
         workerCount,
         time.Duration(workerTimeout) * time.Millisecond,
     )
+
+    // Allowlist hosts for outbound requests during PDF generation. Without
+    // this, every https URL in template data AND every network request the
+    // headless browser attempts while rendering the page is rejected.
+    // Matches exact host or single-label alphanumeric subdomain
+    // (e.g. "example.com" allows "cdn.example.com" but not "a.b.example.com").
+    browser_manager.SetAllowedDomains([]string{
+        "b.zmtcdn.com",
+        "cdn-icons-png.flaticon.com",
+    })
 }
 ```
+
+The allowlist is enforced at two layers:
+
+1. **Image prefetch** (`renderer.PrefetchImages`) — https image URLs in the template data payload are checked before fetching. Disallowed URLs with are skipped and fail to render. HTTP redirects are blocked outright (the client uses `http.ErrUseLastResponse`), so a permitted host cannot redirect the fetcher to an internal address.
+2. **Browser rendering** (`lib/browser_manager` request hijacker) — a CDP hijack router is installed on every tab and blocks any outbound http(s) request whose host is not allowlisted. Local schemes (`data:`, `blob:`, `about:`, `chrome:`, `file:` …) are permitted so data-URI images and inline resources still work.
+
+The bundled example service reads this list from `prefetch_images.allowed_domains` in [service/configs/espressoconfig.yaml](../service/configs/espressoconfig.yaml) and calls `browser_manager.SetAllowedDomains` once at startup.
 
 ### 2. PDF Generation
 

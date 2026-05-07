@@ -57,8 +57,10 @@ RUN groupadd -r chrome && useradd -r -g chrome -G audio,video chrome \
     && chown -R chrome:chrome /app/espresso
 
 
-# Set proper permissions
-RUN chown -R chrome:chrome /app
+# Set proper permissions. /go must also be writable by the chrome user because
+# `go run -mod=mod` at container start may resolve/download modules into
+# /go/pkg/mod/cache at runtime.
+RUN chown -R chrome:chrome /app /go
 
 # Set the user to chrome for the container
 USER chrome
@@ -66,4 +68,4 @@ USER chrome
 EXPOSE 8081
 
 # Change the CMD to run the Go application directly
-CMD ["go", "run","-mod=mod", "/app/espresso/service/main.go"]
+CMD ["go", "run", "-mod=mod", "/app/espresso/service/main.go"]

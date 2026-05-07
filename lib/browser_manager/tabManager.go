@@ -41,6 +41,7 @@ func NewTabPool(ctx context.Context, browser *rod.Browser, tabPool int) *TabPool
 	pool.initOnce.Do(func() {
 		for i := 0; i < tabPool; i++ {
 			page := browser.MustPage("about:blank")
+			attachRequestFilter(page)
 			pool.pool <- page
 		}
 	})
@@ -52,7 +53,9 @@ func NewTabPool(ctx context.Context, browser *rod.Browser, tabPool int) *TabPool
 func GetTab() *rod.Page {
 	log.Logger.Info(context.Background(), "Getting tab", nil)
 	if numTabs == 0 {
-		return Browser.MustPage("about:blank")
+		page := Browser.MustPage("about:blank")
+		attachRequestFilter(page)
+		return page
 	}
 
 	page := <-tabManagerInstance.pool
