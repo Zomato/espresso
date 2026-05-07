@@ -11,7 +11,8 @@ import (
 )
 
 type ZeroLog struct {
-	logger zerolog.Logger
+	logger  zerolog.Logger
+	enabled bool
 }
 
 var (
@@ -26,8 +27,13 @@ func NewZeroLogger() ZeroLog {
 
 	zerolog.SetGlobalLevel(zerolog.DebugLevel)
 
+	// ESPRESSO_LOG_ENABLED defaults to true. Set to "false" to disable all logging.
+	// Note: The env var is read once at initialization; changes after process start are not reflected.
+	enabled := os.Getenv("ESPRESSO_LOG_ENABLED") != "false"
+
 	zeroLog := ZeroLog{
-		logger: log.Logger,
+		logger:  log.Logger,
+		enabled: enabled,
 	}
 
 	Logger = zeroLog
@@ -43,18 +49,36 @@ func addFields(event *zerolog.Event, fields map[string]any) *zerolog.Event {
 	return event
 }
 
+func (l ZeroLog) logIfEnabled(fn func()) {
+	if l.enabled {
+		fn()
+	}
+}
+
 func (l ZeroLog) Info(ctx context.Context, msg string, fields customLogger.Fields) {
-	addFields(l.logger.Info(), fields).Msg(msg)
+	l.logIfEnabled(func() {
+		addFields(l.logger.Info(), fields).Msg(msg)
+	})
 }
 
 func (l ZeroLog) Warn(ctx context.Context, msg string, fields customLogger.Fields) {
-	addFields(l.logger.Warn(), fields).Msg(msg)
+	l.logIfEnabled(func() {
+		addFields(l.logger.Warn(), fields).Msg(msg)
+	})
 }
 
 func (l ZeroLog) Error(ctx context.Context, msg string, err error, fields customLogger.Fields) {
-	addFields(l.logger.Err(err), fields).Msg(msg)
+	l.logIfEnabled(func() {
+		addFields(l.logger.Err(err), fields).Msg(msg)
+	})
 }
 
 func (l ZeroLog) Debug(ctx context.Context, msg string, fields customLogger.Fields) {
-	addFields(l.logger.Debug(), fields).Msg(msg)
+	l.logIfEnabled(func() {
+		addFields(l.logger.Debug(), fields).Msg(msg)
+	})
+}
+
+func (l ZeroLog) Enabled() bool {
+	return l.enabled
 }

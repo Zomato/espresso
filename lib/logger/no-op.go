@@ -21,3 +21,7 @@ func (n NoOpLogger) Warn(ctx context.Context, msg string, fields Fields) {}
 func (n NoOpLogger) Error(ctx context.Context, msg string, err error, fields Fields) {}
 
 func (n NoOpLogger) Debug(ctx context.Context, msg string, fields Fields) {}
+
+func (n NoOpLogger) Enabled() bool {
+	return false
+}
