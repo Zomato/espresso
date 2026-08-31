@@ -19,9 +19,9 @@ type SigningCredentials struct {
 	PrivateKey  crypto.Signer
 }
 type CertificateConfig struct {
-	CertFilePath string
-	KeyFilePath  string
-	KeyPassword  string
+	CertFilePath string `mapstructure:"cert_file_path"`
+	KeyFilePath  string `mapstructure:"key_file_path"`
+	KeyPassword  string `mapstructure:"key_password"`
 }
 
 // LoadSigningCredentials loads certificate and private key from configured paths

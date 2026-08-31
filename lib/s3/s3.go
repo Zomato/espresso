@@ -18,25 +18,25 @@ import (
 )
 
 type Config struct {
-	Endpoint              string
-	Region                string
-	ForcePathStyle        bool
-	UploaderPartSize      int64
-	UploaderConcurrency   int
-	DownloaderPartSize    int64
-	DownloaderConcurrency int
-	Debug                 bool
-	RetryMaxAttempts      int
-	Bucket                string
-	AccessKeyID           string
-	SecretAccessKey       string
-	SessionToken          string
-	UseCustomTransport    bool
+	Endpoint              string `mapstructure:"endpoint"`
+	Region                string `mapstructure:"region"`
+	ForcePathStyle        bool   `mapstructure:"force_path_style"`
+	UploaderPartSizeMB    int64  `mapstructure:"uploader_part_size_mb"`
+	UploaderConcurrency   int    `mapstructure:"uploader_concurrency"`
+	DownloaderPartSizeMB  int64  `mapstructure:"downloader_part_size_mb"`
+	DownloaderConcurrency int    `mapstructure:"downloader_concurrency"`
+	Debug                 bool   `mapstructure:"debug"`
+	RetryMaxAttempts      int    `mapstructure:"retry_max_attempts"`
+	Bucket                string `mapstructure:"bucket"`
+	AccessKeyID           string `mapstructure:"access_key_id"`
+	SecretAccessKey       string `mapstructure:"secret_access_key"`
+	SessionToken          string `mapstructure:"session_token"`
+	UseCustomTransport    bool   `mapstructure:"use_custom_transport"`
 }
 type AwsCredConfig struct {
-	AccessKeyID     string
-	SecretAccessKey string
-	SessionToken    string
+	AccessKeyID     string `mapstructure:"access_key_id"`
+	SecretAccessKey string `mapstructure:"secret_access_key"`
+	SessionToken    string `mapstructure:"session_token"`
 }
 
 type S3Client struct {
@@ -101,16 +101,16 @@ func NewS3Client(ctx context.Context, options ...func(*Config)) (*S3Client, erro
 
 	// https://levyeran.medium.com/high-memory-allocations-and-gc-cycles-while-downloading-large-s3-objects-using-the-aws-sdk-for-go-e776a136c5d0
 	uploader := manager.NewUploader(awsS3Client, func(u *manager.Uploader) {
-		u.PartSize = config.UploaderPartSize * 1024 * 1024
+		u.PartSize = config.UploaderPartSizeMB * 1024 * 1024
 		u.Concurrency = config.UploaderConcurrency
-		u.BufferProvider = manager.NewBufferedReadSeekerWriteToPool(int(config.UploaderPartSize) * 1024 * 1024)
+		u.BufferProvider = manager.NewBufferedReadSeekerWriteToPool(int(config.UploaderPartSizeMB) * 1024 * 1024)
 		u.LeavePartsOnError = false
 	})
 
 	downloader := manager.NewDownloader(awsS3Client, func(d *manager.Downloader) {
-		d.PartSize = config.DownloaderPartSize * 1024 * 1024
+		d.PartSize = config.DownloaderPartSizeMB * 1024 * 1024
 		d.Concurrency = config.DownloaderConcurrency
-		d.BufferProvider = manager.NewPooledBufferedWriterReadFromProvider(int(config.DownloaderPartSize) * 1024 * 1024)
+		d.BufferProvider = manager.NewPooledBufferedWriterReadFromProvider(int(config.DownloaderPartSizeMB) * 1024 * 1024)
 	})
 
 	presignClient := s3.NewPresignClient(awsS3Client)
@@ -211,7 +211,7 @@ func WithForcePathStyle(forcePathStyle bool) func(*Config) {
 
 func WithUploaderPartSize(uploaderPartSize int64) func(*Config) {
 	return func(c *Config) {
-		c.UploaderPartSize = uploaderPartSize
+		c.UploaderPartSizeMB = uploaderPartSize
 	}
 }
 
@@ -229,7 +229,7 @@ func WithDebug(debug bool) func(*Config) {
 
 func WithDownloaderPartSize(downloaderPartSize int64) func(*Config) {
 	return func(c *Config) {
-		c.DownloaderPartSize = downloaderPartSize
+		c.DownloaderPartSizeMB = downloaderPartSize
 	}
 }
 
