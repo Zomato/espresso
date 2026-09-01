@@ -43,6 +43,10 @@ digital_certificates:
 
 mysql:
   dsn: "pdf_user:pdf_password@tcp(mysql:3306)/pdf_templates?parseTime=true"
+logger:
+  disabled: false
+  level: "debug" # Supported levels: debug, info, warn, error, disabled
+  format: "console" # console or json
 prefetch_images:
   allowed_domains:
     - "b.zmtcdn.com"

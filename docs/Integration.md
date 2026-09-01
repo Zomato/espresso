@@ -497,6 +497,66 @@ defer pdf.Close()
 
    
 
+## Logging & Observability
+
+Espresso is designed for high throughput and provides a flexible, low-overhead logging architecture:
+
+- **Core Library (`lib/logger`)**: Defines the `ILogger` interface with `Info`, `Warn`, `Error`, and `Debug` methods. By default, `lib` uses a lightweight `NoOpLogger` with zero allocation overhead.
+- **Service Layer (`service/utils`)**: Provides a full integration with **Zero Logger (`zerolog`)**, featuring JSON/Console output formats, configurable log levels, and conditional log suppression.
+
+### Configuration
+
+In `service/configs/espressoconfig.yaml`:
+
+```yaml
+logger:
+  disabled: false       # Set true to completely suppress logs during high-throughput workloads
+  level: "info"         # Level: trace, debug, info, warn, error, fatal, panic, disabled
+  format: "console"     # Format: "console" (human readable) or "json" (structured production logs)
+```
+
+You can also pass `disableLogs: true` or `logLevel: "warn"` as environment variables or Viper configurations.
+
+### Custom Logger Implementation
+
+You can plug any logging library into Espresso by implementing `lib/logger.ILogger`:
+
+```go
+package main
+
+import (
+    "context"
+    "github.com/Zomato/espresso/lib/logger"
+    "github.com/Zomato/espresso/service/utils"
+)
+
+type CustomLogger struct{}
+
+func (c *CustomLogger) Info(ctx context.Context, msg string, fields logger.Fields) {}
+func (c *CustomLogger) Warn(ctx context.Context, msg string, fields logger.Fields) {}
+func (c *CustomLogger) Error(ctx context.Context, msg string, err error, fields logger.Fields) {}
+func (c *CustomLogger) Debug(ctx context.Context, msg string, fields logger.Fields) {}
+
+func main() {
+    // Option 1: Use Zero Logger with custom configuration
+    zLog := utils.NewZeroLoggerWithConfig(utils.LogConfig{
+        Disabled: false,
+        Level:    "info",
+        Format:   "json",
+    })
+    logger.Initialize(zLog)
+
+    // Option 2: Use custom ILogger implementation
+    // logger.Initialize(&CustomLogger{})
+}
+```
+
+### Logging Best Practices in High-Throughput Scenarios
+
+1. **Production Deployment**: Set `logger.format: "json"` and `logger.level: "info"` or `"warn"` to reduce log volume.
+2. **High-Throughput / Load Testing**: Set `logger.disabled: true` (or `disableLogs: true`) to avoid stdio/disk I/O bottlenecks during peak PDF rendering.
+3. **Structured Fields**: Always pass dynamic metadata via `logger.Fields` map rather than formatting string messages to allow efficient indexing and querying.
+
 ## For More Examples
 
 Check out our example service implementation in the `service` directory, which showcases a complete web server using this package.
