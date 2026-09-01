@@ -27,10 +27,23 @@ We recently signed 1.6 million PDFs in just 19 minutes—that’s ~1,400 PDFs pe
 
 See our [Quick Start Guide](docs/QuickStart.md) for running the service using Docker Compose.
 
+## Logging & Observability
+
+Espresso integrates **Zero Logger** (`github.com/rs/zerolog`) for ultra-low overhead structured logging. Logging can be conditionally suppressed or customized via configuration:
+
+```yaml
+logger:
+  disabled: false       # Set true to suppress console/file logs during high-throughput workloads
+  level: "info"         # Options: trace, debug, info, warn, error, fatal, panic, disabled
+  format: "console"     # Options: console, json
+```
+
+For programmatic integration and replacing the logger with custom implementations, see the [Integration Guide](docs/Integration.md#logging--observability).
 
 ## Requirements
 
 - Go 1.23+
 - Docker & Docker Compose (for running the complete service)
 - X.509 certificates (for PDF signing)
+
 
