@@ -25,6 +25,9 @@ func TestGetHtmlPdf(t *testing.T) {
 			200,
 		)*time.Millisecond,
 	)
+	t.Cleanup(func() {
+		workerpool.Pool().Release()
+	})
 
 	browser_manager.SetAllowedDomains([]string{"cdn-icons-png.flaticon.com"})
 	t.Cleanup(func() { browser_manager.SetAllowedDomains(nil) })

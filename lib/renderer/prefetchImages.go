@@ -24,17 +24,23 @@ type stackItem struct {
 	data map[string]interface{}
 }
 
+type imageTask struct {
+	key       string
+	url       string
+	parentMap map[string]interface{}
+}
+
 // Prefetch images and replace their URLs with data URIs
 func PrefetchImages(ctx context.Context, data map[string]interface{}) map[string]interface{} {
 
 	startTime := time.Now()
 	var wg sync.WaitGroup
-	var mu sync.Mutex // to add lock on updating the json data
+	var mu sync.Mutex
 
-	ctx, cancel := context.WithCancel(ctx)
-	defer cancel()
-	errChan := make(chan error, 1)
-
+	// Phase 1: traverse the map tree and collect image-fetch tasks.
+	// No worker goroutines are running during this phase, so all map
+	// reads and the map[string]string conversion writes are safe.
+	var tasks []imageTask
 	stack := []stackItem{{key: "", data: data}}
 
 	for len(stack) > 0 {
@@ -42,75 +48,8 @@ func PrefetchImages(ctx context.Context, data map[string]interface{}) map[string
 		stack = stack[:len(stack)-1]
 
 		for key, value := range current.data {
-			strValue, ok := value.(string)
-			if ok && (strings.HasPrefix(strValue, "https://")) {
-				wg.Add(1)
-				err := workerpool.Pool().SubmitTask(func(args ...interface{}) {
-					k := args[0].(string)
-					v := args[1].(string)
-					parentData := args[2].(map[string]interface{})
-
-					defer func() {
-						wg.Done()
-						if r := recover(); r != nil {
-							err := fmt.Errorf("panic: %v and stacktrace %s", r, string(debug.Stack()))
-							log.Logger.Info(ctx, "recovered from panic", map[string]any{"error": err})
-						}
-					}()
-
-					allowed, reason := browser_manager.IsURLAllowed(v)
-					if !allowed {
-						// Drop the disallowed URL from the template data so it
-						// never reaches the rendered HTML
-						mu.Lock()
-						delete(parentData, k)
-						mu.Unlock()
-
-						if !imageExtURLRegex.MatchString(v) {
-							log.Logger.Info(ctx, "URL not allowed and has non-image extension", map[string]any{"url": v, "reason": reason})
-							return
-						}
-						err := fmt.Errorf("image URL not allowed: %s. Reason: %s", v, reason)
-						log.Logger.Error(ctx, "error while prefetching images", err, map[string]any{"url": v})
-						select {
-						case errChan <- err:
-							cancel()
-						default:
-						}
-						return
-					}
-
-					var dataURI string
-					var err error
-					if strings.HasPrefix(v, "https://") {
-						duration := time.Since(startTime)
-						log.Logger.Info(ctx, "fetching image at", map[string]any{"name": v, "duration": duration})
-						dataURI, err = fetchImageAsDataURIFromURL(v)
-						if err != nil {
-							log.Logger.Error(ctx, "failed to download image", err, map[string]any{"key": k})
-							return
-						}
-					}
-
-					if dataURI == "" {
-						log.Logger.Error(ctx, "failed to download image. data uri is empty", nil, map[string]any{"key": k})
-						mu.Lock()
-						parentData[k] = ""
-						mu.Unlock()
-						return
-					}
-
-					duration := time.Since(startTime)
-					log.Logger.Info(ctx, "fetched image data at", map[string]any{"duration": duration, "image": v})
-
-					mu.Lock()
-					parentData[k] = dataURI
-					mu.Unlock()
-					log.Logger.Info(ctx, "replaced image data at", map[string]any{"duration": duration, "key": k, "error": err})
-				}, key, strValue, current.data)
-				if err != nil {
-					log.Logger.Error(ctx, "failed to submit task to worker pool", err, nil)
-				}
+			if strValue, ok := value.(string); ok && strings.HasPrefix(strValue, "https://") {
+				tasks = append(tasks, imageTask{key: key, url: strValue, parentMap: current.data})
 			} else if nestedMap, ok := value.(map[string]interface{}); ok {
 				stack = append(stack, stackItem{key: key, data: nestedMap})
 			} else if stringMap, ok := value.(map[string]string); ok {
@@ -118,7 +57,6 @@ func PrefetchImages(ctx context.Context, data map[string]interface{}) map[string
 				for k, v := range stringMap {
 					interfaceMap[k] = v
 				}
-
 				current.data[key] = interfaceMap
 				stack = append(stack, stackItem{key: key, data: interfaceMap})
 			}
@@ -126,7 +64,77 @@ func PrefetchImages(ctx context.Context, data map[string]interface{}) map[string
 	}
 
 	duration := time.Since(startTime)
-	log.Logger.Info(ctx, "prefetching images completed at", map[string]any{"duration": duration})
+	log.Logger.Info(ctx, "prefetch collection completed at", map[string]any{"duration": duration, "tasks": len(tasks)})
+
+	// Phase 2: dispatch collected tasks to the worker pool.
+	// The main goroutine no longer iterates any map that workers mutate.
+	for _, task := range tasks {
+		wg.Add(1)
+		err := workerpool.Pool().SubmitTask(func(args ...interface{}) {
+			k := args[0].(string)
+			v := args[1].(string)
+			parentData := args[2].(map[string]interface{})
+
+			defer func() {
+				wg.Done()
+				if r := recover(); r != nil {
+					err := fmt.Errorf("panic: %v and stacktrace %s", r, string(debug.Stack()))
+					log.Logger.Info(ctx, "recovered from panic", map[string]any{"error": err})
+				}
+			}()
+
+			allowed, reason := browser_manager.IsURLAllowed(v)
+			if !allowed {
+				mu.Lock()
+				delete(parentData, k)
+				mu.Unlock()
+
+				if !imageExtURLRegex.MatchString(v) {
+					log.Logger.Info(ctx, "URL not allowed and has non-image extension", map[string]any{"url": v, "reason": reason})
+					return
+				}
+				log.Logger.Error(ctx, "error while prefetching images",
+					fmt.Errorf("image URL not allowed: %s. Reason: %s", v, reason),
+					map[string]any{"url": v})
+				return
+			}
+
+			var dataURI string
+			var err error
+			if strings.HasPrefix(v, "https://") {
+				duration := time.Since(startTime)
+				log.Logger.Info(ctx, "fetching image at", map[string]any{"name": v, "duration": duration})
+				dataURI, err = fetchImageAsDataURIFromURL(v)
+				if err != nil {
+					log.Logger.Error(ctx, "failed to download image", err, map[string]any{"key": k})
+					return
+				}
+			}
+
+			if dataURI == "" {
+				log.Logger.Error(ctx, "failed to download image. data uri is empty", nil, map[string]any{"key": k})
+				mu.Lock()
+				parentData[k] = ""
+				mu.Unlock()
+				return
+			}
+
+			duration := time.Since(startTime)
+			log.Logger.Info(ctx, "fetched image data at", map[string]any{"duration": duration, "image": v})
+
+			mu.Lock()
+			parentData[k] = dataURI
+			mu.Unlock()
+			log.Logger.Info(ctx, "replaced image data at", map[string]any{"duration": duration, "key": k, "error": err})
+		}, task.key, task.url, task.parentMap)
+		if err != nil {
+			wg.Done()
+			log.Logger.Error(ctx, "failed to submit task to worker pool", err, nil)
+		}
+	}
+
+	duration = time.Since(startTime)
+	log.Logger.Info(ctx, "prefetching images dispatched at", map[string]any{"duration": duration})
 
 	wg.Wait()
 
